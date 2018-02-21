@@ -230,7 +230,14 @@ namespace Netsphere.Network.Services
         {
             var plr = session.Player;
 
-            plr.Room.Broadcast(new SEventMessageAckMessage(message.Event, session.Player.Account.Id, message.Unk1, message.Value, ""));
+            if(plr.Room!=null)
+                plr.Room.Broadcast(new SEventMessageAckMessage(message.Event, session.Player.Account.Id, message.Unk1, message.Value, ""));
+            else
+            {
+                Logger.ForAccount(session)
+                    .Debug("Player don't have room");
+                return;
+            }
             //if (message.Event == GameEventMessage.BallReset && plr == plr.Room.Host)
             //{
             //    plr.Room.Broadcast(new SEventMessageAckMessage(GameEventMessage.BallReset, 0, 0, 0, ""));

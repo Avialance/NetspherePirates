@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "DatabaseMigrator": {
+      "commandName": "Project"
+    }
+  }
+}
