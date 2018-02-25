@@ -400,6 +400,30 @@ namespace Netsphere.Network.Services
 
         #region Scores
 
+        [MessageHandler(typeof(CSlaughterAttackPointReqMessage))]
+        public void CSlaughterAttackPointReq(GameSession session, CSlaughterAttackPointReqMessage message)
+        {
+            var plr = session.Player;
+            Logger.ForAccount(plr.Account).Information($"Charser Unk1 {message.Unk1}, unk2 {message.Unk2}");
+
+            var resp = new SSlaughterAttackPointAckMessage {
+                AccountId = message.AccountId,
+                Unk1 = message.Unk1,
+                Unk2 = message.Unk2
+            };
+            
+            plr.Room.Broadcast(resp);
+        }
+
+        [MessageHandler(typeof(CSlaughterHealPointReqMessage))]
+        public void CSlaughterHealPointReqMessage(GameSession session, CSlaughterHealPointReqMessage message)
+        {
+            var plr = session.Player;
+            Logger.ForAccount(plr.Account).Information($"Charser Unk {message.Unk}");
+            var resp = new SSlaughterHealPointAckMessage { AccountId = plr.Account.Id, Unk = message.Unk };
+            plr.Room.Broadcast(resp);
+        }
+
         [MessageHandler(typeof(CScoreKillReqMessage))]
         public void CScoreKillReq(GameSession session, CScoreKillReqMessage message)
         {

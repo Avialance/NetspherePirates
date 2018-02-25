@@ -175,6 +175,36 @@ namespace Netsphere.Network.Services
                     await db.InsertAsync(plrDto);
                 }
 
+                plrDto.DeathMatchInfo = (List<PlayerDeathMatchDto>)(await db.FindAsync<PlayerDeathMatchDto>(
+                                        statament => statament
+                                        .Where($"{nameof(PlayerDeathMatchDto.PlayerId):C} = @PlayerId")
+                                        .WithParameters(new { PlayerId = message.AccountId })));
+
+                plrDto.TouchDownInfo = (List<PlayerTouchDownDto>)(await db.FindAsync<PlayerTouchDownDto>(
+                                        statament => statament
+                                        .Where($"{nameof(PlayerTouchDownDto.PlayerId):C} = @PlayerId")
+                                        .WithParameters(new { PlayerId = message.AccountId })));
+
+                plrDto.ChaserInfo = (List<PlayerChaserDto>)(await db.FindAsync<PlayerChaserDto>(
+                                        statament => statament
+                                        .Where($"{nameof(PlayerChaserDto.PlayerId):C} = @PlayerId")
+                                        .WithParameters(new { PlayerId = message.AccountId })));
+
+                plrDto.BattleRoyalInfo = (List<PlayerBattleRoyalDto>)(await db.FindAsync<PlayerBattleRoyalDto>(
+                                        statament => statament
+                                        .Where($"{nameof(PlayerBattleRoyalDto.PlayerId):C} = @PlayerId")
+                                        .WithParameters(new { PlayerId = message.AccountId })));
+
+                plrDto.CaptainInfo = (List<PlayerCaptainDto>)(await db.FindAsync<PlayerCaptainDto>(
+                                        statament => statament
+                                        .Where($"{nameof(PlayerCaptainDto.PlayerId):C} = @PlayerId")
+                                        .WithParameters(new { PlayerId = message.AccountId })));
+
+                plrDto.Missions = (List<PlayerMissionsDto>)(await db.FindAsync<PlayerMissionsDto>(
+                                        statament => statament
+                                        .Where($"{nameof(PlayerCaptainDto.PlayerId):C} = @PlayerId")
+                                        .WithParameters(new { PlayerId = message.AccountId })));
+
                 session.Player = new Player(session, account, plrDto);
             }
 
@@ -329,9 +359,15 @@ namespace Netsphere.Network.Services
                 AP = plr.AP,
                 PEN = plr.PEN,
                 TutorialState = (uint)(Config.Instance.Game.EnableTutorial ? plr.TutorialState : 2),
-                Nickname = plr.Account.Nickname
+                Nickname = plr.Account.Nickname,
+                DMStats = plr.DeathMatch.GetStatsDto(),
+                TDStats = plr.TouchDown.GetStatsDto(),
+                ChaserStats = plr.Chasser.GetStatsDto(),
+                BRStats = plr.BattleRoyal.GetStatsDto(),
+                CPTStats = plr.CaptainMode.GetStatsDto()
             });
 
+            await session.SendAsync(new STaskInfoAckMessage { Tasks = plr.Mission.GetTasks() });
             await session.SendAsync(new SServerResultInfoAckMessage(ServerResult.WelcomeToS4World2));
 
             if (plr.Inventory.Count == 0)

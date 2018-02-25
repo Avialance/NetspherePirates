@@ -50,7 +50,8 @@ namespace Netsphere.Game.GameRules
 
             StateMachine.Configure(GameRuleState.Result)
                 .SubstateOf(GameRuleState.Playing)
-                .Permit(GameRuleStateTrigger.EndGame, GameRuleState.Waiting);
+                .Permit(GameRuleStateTrigger.EndGame, GameRuleState.Waiting)
+                .OnEntry(UpdatePlayerStats);
         }
 
         public override void Initialize()
@@ -69,6 +70,15 @@ namespace Netsphere.Game.GameRules
             teamMgr.Remove(Team.Beta);
 
             base.Cleanup();
+        }
+
+        public override void PlayerLeft(object room, RoomPlayerEventArgs e)
+        {
+            if (StateMachine.IsInState(GameRuleState.FirstHalf)
+                || StateMachine.IsInState(GameRuleState.HalfTime)
+                || StateMachine.IsInState(GameRuleState.SecondHalf))
+                e.Player.TouchDown.Loss++;
+            base.PlayerLeft(room, e);
         }
 
         public override void Update(TimeSpan delta)
@@ -139,8 +149,12 @@ namespace Netsphere.Game.GameRules
                 return;
 
             GetRecord(killer).OffenseScore++;
+            killer.TouchDown.Offense++;
             if (assist != null)
+            {
                 GetRecord(assist).OffenseAssistScore++;
+                assist.TouchDown.OffenseAssist++;
+            }
 
             if (assist != null)
                 Room.Broadcast(new SScoreOffenseAssistAckMessage(new ScoreAssistDto(killer.RoomInfo.PeerId, assist.RoomInfo.PeerId, target.RoomInfo.PeerId, attackAttribute)));
@@ -154,8 +168,12 @@ namespace Netsphere.Game.GameRules
                 return;
 
             GetRecord(killer).DefenseScore++;
+            killer.TouchDown.Defense++;
             if (assist != null)
+            {
                 GetRecord(assist).DefenseAssistScore++;
+                assist.TouchDown.DefenseAssist++;
+            }
 
             if (assist != null)
                 Room.Broadcast(new SScoreDefenseAssistAckMessage(new ScoreAssistDto(killer.RoomInfo.PeerId, assist.RoomInfo.PeerId, target.RoomInfo.PeerId, attackAttribute)));
@@ -167,12 +185,15 @@ namespace Netsphere.Game.GameRules
         {
             if (IsInTouchdown)
                 return;
-                
-            if(oldPlr != null)
+
+            if (oldPlr != null)
                 _touchdownAssistHelper.Update(oldPlr);
 
             if (newPlr != null)
+            {
                 GetRecord(newPlr).OffenseReboundScore++;
+                newPlr.TouchDown.OffenseRebound++;
+            }
 
             Room.Broadcast(new SScoreReboundAckMessage(newPlr?.RoomInfo.PeerId ?? 0, oldPlr?.RoomInfo.PeerId ?? 0));
         }
@@ -186,10 +207,12 @@ namespace Netsphere.Game.GameRules
             {
                 assist = _touchdownAssistHelper.LastPlayer;
                 GetRecord(assist).TDAssistScore++;
+                assist.TouchDown.TDAssist++;
             }
 
             plr.RoomInfo.Team.Score++;
             GetRecord(plr).TDScore++;
+            plr.TouchDown.TD++;
 
             if (assist != null)
                 Room.Broadcast(new SScoreGoalAssistAckMessage(plr.RoomInfo.PeerId, assist.RoomInfo.PeerId));
@@ -211,6 +234,7 @@ namespace Netsphere.Game.GameRules
                 return;
 
             GetRecord(plr).HealScore++;
+            plr.TouchDown.TDHeal++;
             base.OnScoreHeal(plr);
         }
 
@@ -218,6 +242,10 @@ namespace Netsphere.Game.GameRules
         {
             if (IsInTouchdown)
                 return;
+
+            killer.TouchDown.Kill++;
+            if (assist != null)
+                assist.TouchDown.KillAssists++;
 
             base.OnScoreKill(killer, assist, target, attackAttribute);
         }
@@ -254,6 +282,25 @@ namespace Netsphere.Game.GameRules
         private static TouchdownPlayerRecord GetRecord(Player plr)
         {
             return (TouchdownPlayerRecord)plr.RoomInfo.Stats;
+        }
+
+        private void UpdatePlayerStats()
+        {
+            var WinTeam = Room
+                .TeamManager
+                .PlayersPlaying
+                .Aggregate(
+                    (highestTeam, player) =>
+                    (highestTeam == null || player.RoomInfo.Team.Score > highestTeam.RoomInfo.Team.Score) ?
+                    player : highestTeam).RoomInfo.Team;
+
+            foreach (var plr in Room.TeamManager.PlayersPlaying)
+            {
+                if (plr.RoomInfo.Team == WinTeam)
+                    plr.TouchDown.Won++;
+                else
+                    plr.TouchDown.Loss++;
+            }
         }
     }
 

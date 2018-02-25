@@ -49,6 +49,7 @@
     public enum MissionRewardType : byte
     {
         PEN = 1,
+        EXP = 2,
     }
 
     public enum ShopResourceType : byte
@@ -179,6 +180,7 @@
 
     public enum GameTimeState : uint
     {
+        Neutral = 0,
         FirstHalf = 1,
         HalfTime = 2,
         SecondHalf = 3,

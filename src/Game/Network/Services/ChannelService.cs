@@ -158,8 +158,7 @@ namespace Netsphere.Network.Services
             {
                 plr.PEN += 5000;
                 plr.TutorialState = message.TutorialState;
-                session.SendAsync(new SRefreshCashInfoAckMessage { PEN = plr.PEN, AP = plr.AP
-                });
+                session.SendAsync(new SRefreshCashInfoAckMessage { PEN = plr.PEN, AP = plr.AP });
             }
             return Task.CompletedTask;
         } 
@@ -167,8 +166,58 @@ namespace Netsphere.Network.Services
         [MessageHandler(typeof(CTaskRequestReqMessage))]
         public Task TaskRequestReq(GameSession session, CTaskRequestReqMessage message)
         {
-            //ToDo - Logic
-            return session.SendAsync(new SServerResultInfoAckMessage(ServerResult.FailedToRequestTask));
+            var task = session.Player.Mission.AcceptTask(message.Unk1, message.TaskId, message.Slot);
+
+            if (task == null)
+                return session.SendAsync(new SServerResultInfoAckMessage(ServerResult.FailedToRequestTask));
+
+            return session.SendAsync(new STaskRequestAckMessage
+            {
+                TaskId = task.Id,
+                RewardType = task.RewardType,
+                Reward = task.Reward,
+                Slot = task.Unk1
+            });
+        }
+
+        [MessageHandler(typeof(CTaskNotifyReqMessage))]
+        public Task TaskNotifyReq(GameSession session, CTaskNotifyReqMessage message)
+        {
+            var plr = session.Player;
+            var progress = session.Player.Mission.UpdateTask(message.TaskId, message.Progress);
+
+            if (progress == 0xffff)
+            {
+                if (plr.Room != null && plr.Room.TeamManager.PlayersPlaying.Any(p => p == plr))
+                {
+                    return session.SendAsync(new STaskIngameUpdateAckMessage
+                    {
+                        TaskId = 0,
+                        Progress = progress
+                    });
+                }
+
+                return session.SendAsync(new STaskUpdateAckMessage
+                {
+                    TaskId = 0,
+                    Progress = progress
+                });
+            }
+
+            if (plr.Room != null && plr.Room.TeamManager.PlayersPlaying.Any(p => p == plr))
+            {
+                return session.SendAsync(new STaskIngameUpdateAckMessage
+                {
+                    TaskId = message.TaskId,
+                    Progress = progress
+                });
+            }
+
+            return session.SendAsync(new STaskUpdateAckMessage
+            {
+                TaskId = message.TaskId,
+                Progress = progress
+            });
         }
     }
 }

@@ -147,7 +147,8 @@ namespace Netsphere
             if (plr.Room != null)
                 throw new RoomException("Player is already inside a room");
 
-            if (_players.Count >= Options.MatchKey.PlayerLimit)
+            if ((Options.MatchKey.PlayerLimit != 0 && _players.Count >= Options.MatchKey.PlayerLimit) ||
+                (Options.MatchKey.PlayerLimit == 0 && _players.Count >= 1))
                 throw new RoomLimitReachedException();
 
             if (_kickedPlayers.ContainsKey(plr.Account.Id))

@@ -1,5 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using BlubLib.DotNetty.Handlers.MessageHandling;
+using Netsphere.Network.Data.Game;
 using Netsphere.Network.Message.Game;
 using ProudNet.Handlers;
 using Serilog;
@@ -174,7 +176,7 @@ namespace Netsphere.Network.Services
         public void UseCapsuleReq(GameSession session, CUseCapsuleReqMessage message)
         {
             session.SendAsync(new SServerResultInfoAckMessage((ServerResult)1));
-            //session.Send(new SUseCapsuleAckMessage(new List<CapsuleRewardDto>
+            //session.SendAsync(new SUseCapsuleAckMessage(new List<CapsuleRewardDto>
             //{
             //    new CapsuleRewardDto(CapsuleRewardType.Item, 0, 64, 0),
             //    new CapsuleRewardDto(CapsuleRewardType.Item, 0, 154, 123),

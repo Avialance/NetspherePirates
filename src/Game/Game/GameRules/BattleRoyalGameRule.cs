@@ -23,6 +23,8 @@ namespace Netsphere.Game.GameRules
                 if (_first == value)
                     return;
                 _first = value;
+                if (_first != null)
+                    _first.BattleRoyal.FirstPlace++;
                 if (StateMachine.IsInState(GameRuleState.Playing))
                     Room.Broadcast(new SGameRuleChangeTheFirstAckMessage(_first?.Account.Id ?? 0));
             }
@@ -34,9 +36,9 @@ namespace Netsphere.Game.GameRules
             Briefing = new Briefing(this);
 
             StateMachine.Configure(GameRuleState.Waiting)
-                .PermitIf(GameRuleStateTrigger.StartGame, GameRuleState.FirstHalf, CanStartGame);
+                .PermitIf(GameRuleStateTrigger.StartGame, GameRuleState.Neutral, CanStartGame);
 
-            StateMachine.Configure(GameRuleState.FirstHalf)
+            StateMachine.Configure(GameRuleState.Neutral)
                 .SubstateOf(GameRuleState.Playing)
                 .Permit(GameRuleStateTrigger.StartResult, GameRuleState.EnteringResult);
 
@@ -47,7 +49,11 @@ namespace Netsphere.Game.GameRules
             StateMachine.Configure(GameRuleState.Result)
                 .SubstateOf(GameRuleState.Playing)
                 .Permit(GameRuleStateTrigger.EndGame, GameRuleState.Waiting)
-                .OnEntry(() => { First = null; });
+                .OnEntry(() =>
+                {
+                    First = null;
+                    UpdatePlayerStats();
+                });
         }
 
         public override void Initialize()
@@ -64,6 +70,12 @@ namespace Netsphere.Game.GameRules
             base.Cleanup();
         }
 
+        public override void PlayerLeft(object room, RoomPlayerEventArgs e)
+        {
+            e.Player.BattleRoyal.Loss++;
+            base.PlayerLeft(room, e);
+        }
+
         public override void Update(TimeSpan delta)
         {
             base.Update(delta);
@@ -75,7 +87,7 @@ namespace Netsphere.Game.GameRules
                 !StateMachine.IsInState(GameRuleState.Result) &&
                 RoundTime >= TimeSpan.FromSeconds(5)) // Let the round run for at least 5 seconds - Fixes StartResult trigger on game start(race condition)
             {
-                if (StateMachine.IsInState(GameRuleState.FirstHalf))
+                if (StateMachine.IsInState(GameRuleState.Neutral))
                 {
                     // Still have enough players?
                     if (teamMgr.PlayersPlaying.Count() < PlayersNeededToStart)
@@ -105,6 +117,7 @@ namespace Netsphere.Game.GameRules
             if (target == First)
             {
                 GetRecord(killer).BonusKills++;
+                killer.BattleRoyal.FirstKilled++;
 
                 if (assist != null)
                     GetRecord(assist).BonusKillAssists++;
@@ -137,6 +150,19 @@ namespace Netsphere.Game.GameRules
         private static BattleRoyalPlayerRecord GetRecord(Player plr)
         {
             return (BattleRoyalPlayerRecord)plr.RoomInfo.Stats;
+        }
+
+        private void UpdatePlayerStats()
+        {
+            var winplayer = GetFirst();
+
+            foreach (var plr in Room.TeamManager.PlayersPlaying)
+            {
+                if (plr == winplayer)
+                    plr.BattleRoyal.Won++;
+                else
+                    plr.BattleRoyal.Loss++;
+            }
         }
     }
 

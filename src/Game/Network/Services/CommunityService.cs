@@ -101,5 +101,18 @@ namespace Netsphere.Network.Services
                     break;
             }
         }
+
+        [MessageHandler(typeof(CFriendReqMessage))]
+        public void FriendRequest(ChatSession session, CFriendReqMessage message)
+        {
+            var target = GameServer.Instance.PlayerManager[message.AccountId];
+            var trg_settings = target.Settings;
+
+            var name = nameof(UserDataDto.AllowFriendRequest);
+            var allowFriendReq =
+                trg_settings.Contains(name) && trg_settings.Get<CommunitySetting>(name) == CommunitySetting.Allow;
+
+            session.SendAsync(new SFriendAckMessage(allowFriendReq ? 0 : 2));
+        }
     }
 }

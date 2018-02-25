@@ -271,13 +271,13 @@ namespace Netsphere.Network.Message.Game
     public class CTaskRequestReqMessage : IGameMessage
     {
         [BlubMember(0)]
-        public byte Unk1 { get; set; }
+        public byte Unk1 { get; set; } // Page?
 
         [BlubMember(1)]
         public uint TaskId { get; set; }
 
         [BlubMember(2)]
-        public byte Unk2 { get; set; } // slot?
+        public byte Slot { get; set; } // slot?
     }
 
     [BlubContract]

@@ -16,6 +16,7 @@ namespace Netsphere
         EnteringResult,
         Result,
 
+        Neutral,
         FirstHalf,
         EnteringHalfTime,
         HalfTime,

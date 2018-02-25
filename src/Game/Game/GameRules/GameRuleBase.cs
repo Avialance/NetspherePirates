@@ -26,6 +26,7 @@ namespace Netsphere.Game.GameRules
         protected GameRuleBase(Room room)
         {
             Room = room;
+            Room.PlayerLeft += PlayerLeft;
             StateMachine = new StateMachine<GameRuleState, GameRuleStateTrigger>(GameRuleState.Waiting);
             StateMachine.OnTransitioned(StateMachine_OnTransition);
         }
@@ -37,6 +38,9 @@ namespace Netsphere.Game.GameRules
         { }
 
         public virtual void Reload()
+        { }
+
+        public virtual void PlayerLeft(object room, RoomPlayerEventArgs e)
         { }
 
         public virtual void Update(TimeSpan delta)
@@ -109,21 +113,30 @@ namespace Netsphere.Game.GameRules
         public virtual void OnScoreKill(Player killer, Player assist, Player target, AttackAttribute attackAttribute)
         {
             killer.RoomInfo.Stats.Kills++;
-            target.RoomInfo.Stats.Deaths++;
-
-            if (assist != null)
+            if (target != null)
             {
-                assist.RoomInfo.Stats.KillAssists++;
+                target.RoomInfo.Stats.Deaths++;
 
-                Room.Broadcast(
-                    new SScoreKillAssistAckMessage(new ScoreAssistDto(killer.RoomInfo.PeerId, assist.RoomInfo.PeerId,
-                        target.RoomInfo.PeerId, attackAttribute)));
+                if (assist != null)
+                {
+                    assist.RoomInfo.Stats.KillAssists++;
+
+                    Room.Broadcast(
+                        new SScoreKillAssistAckMessage(new ScoreAssistDto(killer.RoomInfo.PeerId, assist.RoomInfo.PeerId,
+                            target.RoomInfo.PeerId, attackAttribute)));
+                }
+                else
+                {
+                    Room.Broadcast(
+                        new SScoreKillAckMessage(new ScoreDto(killer.RoomInfo.PeerId, target.RoomInfo.PeerId,
+                            attackAttribute)));
+                }
             }
             else
             {
                 Room.Broadcast(
-                    new SScoreKillAckMessage(new ScoreDto(killer.RoomInfo.PeerId, target.RoomInfo.PeerId,
-                        attackAttribute)));
+                       new SScoreKillAckMessage(new ScoreDto(killer.RoomInfo.PeerId, 0,
+                           attackAttribute)));
             }
         }
 
@@ -155,6 +168,8 @@ namespace Netsphere.Game.GameRules
             switch (transition.Destination)
             {
                 case GameRuleState.FirstHalf:
+                case GameRuleState.Neutral:
+
                     GameTime = TimeSpan.Zero;
                     foreach (var team in Room.TeamManager.Values)
                         team.Score = 0;
@@ -176,7 +191,10 @@ namespace Netsphere.Game.GameRules
 
                     Room.BroadcastBriefing();
                     Room.Broadcast(new SChangeStateAckMessage(GameState.Playing));
-                    Room.Broadcast(new SChangeSubStateAckMessage(GameTimeState.FirstHalf));
+                    if (transition.Destination == GameRuleState.Neutral)
+                        Room.Broadcast(new SChangeSubStateAckMessage(GameTimeState.Neutral));
+                    else
+                        Room.Broadcast(new SChangeSubStateAckMessage(GameTimeState.FirstHalf));
                     break;
 
                 case GameRuleState.HalfTime:

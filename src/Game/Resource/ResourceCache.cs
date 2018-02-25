@@ -30,6 +30,9 @@ namespace Netsphere.Resource
             Logger.Information("Caching: Effects");
             GetEffects();
 
+            Logger.Information("Caching: Mission");
+            GetTasks();
+
             Logger.Information("Caching: Items");
             GetItems();
 
@@ -69,6 +72,19 @@ namespace Netsphere.Resource
                 Logger.Debug("Caching...");
                 value = _loader.LoadEffects().ToDictionary(effect => effect.Id);
                 _cache.Set(ResourceCacheType.Effects, value);
+            }
+
+            return value;
+        }
+
+        public IReadOnlyDictionary<uint, TaskInfo> GetTasks()
+        {
+            var value = _cache.Get<IReadOnlyDictionary<uint, TaskInfo>>(ResourceCacheType.Tasks);
+            if (value == null)
+            {
+                Logger.Debug("Caching...");
+                value = _loader.LoadTaskList().ToDictionary(task => task.Id);
+                _cache.Set(ResourceCacheType.Tasks, value);
             }
 
             return value;

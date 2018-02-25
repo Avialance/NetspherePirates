@@ -120,6 +120,7 @@ namespace Netsphere.Resource
                             map.GameRules.Add(GameRule.Survival);
                             break;
 
+                        case "m": // wtf is this?
                         case "n":
                             map.GameRules.Add(GameRule.Practice);
                             break;
@@ -130,8 +131,7 @@ namespace Netsphere.Resource
 
                         case "std": // wtf is this?
                             break;
-                        case "m": // wtf is this?
-                            break;
+                            //break;
 
                         default:
                             throw new Exception("Invalid game rule " + enabledMode);
@@ -178,6 +178,92 @@ namespace Netsphere.Resource
 
                 itemEffect.Name = name.eng;
                 yield return itemEffect;
+            }
+        }
+
+        public IEnumerable<TaskInfo> LoadTaskList()
+        {
+            var dto = Deserialize<TaskListDto>("xml/_eu_task_list.x7");
+            //var stringTable = Deserialize<StringTableDto>(dto.string_table/*"language/xml/item_effect_string_table.x7"*/);
+
+            foreach (var task in dto.compulsory_task.base_setting)
+            {
+                //var taskName = stringTable.@string.FirstOrDefault(s => s.key.Equals(task.name_key, StringComparison.InvariantCultureIgnoreCase));
+                //if (string.IsNullOrWhiteSpace(taskName.eng))
+                //{
+                //    Logger.Warning("Missing english translation for mision effect {textKey}", task.name_key);
+                //    taskName.eng = task.name;
+                //}
+
+                var Task = new TaskInfo(task.name_key, task.mode_type, task.category)
+                {
+                    Id = (uint)task.level_setting.id,
+                    Level = (uint)task.level_setting.level,
+                    Chance = (uint)task.level_setting.chance_value,
+                    AddChance = (uint)task.level_setting.add_chance_value,
+                    AddChanceLevelLimit = (uint)task.level_setting.add_chan_limit_lv,
+                    constant = true
+                };
+                Task.StartCondition = new SelectCondition
+                {
+                    KDR = task.level_setting.select_condition.kill_per_death?.value ?? 0,
+                    ExpRate = (ulong)(task.level_setting.select_condition.exp_rate?.value ?? 0),
+                    TDScore = task.level_setting.select_condition.touch_down_score?.value ?? 0,
+                    MinLevel = (uint)(task.level_setting.select_condition.min_level?.value ?? 0),
+                    MaxLevel = (uint)(task.level_setting.select_condition.max_level?.value ?? 0),
+                    License = 0,//(uint)task.level_setting.select_condition.have_license.value,
+                    Weapon = (uint)(task.level_setting.select_condition.have_weapon?.value ?? 0)
+                };
+                Task.EndCondition = new CompletionCondition
+                {
+                    game_play_ts = task.level_setting.complet_condition.game_play_ts.value,
+                    goal_of_match = task.level_setting.complet_condition.goal_of_match.value,
+                    number_of_team_person = task.level_setting.complet_condition.number_of_team_person.value,
+                    repetetion = task.level_setting.complet_condition.repetetion.value
+                };
+                Task.RewardPen = (uint)task.level_setting.reward.pen.value;
+
+                yield return Task;
+            }
+
+            foreach (var task in dto.weekly_task.base_setting)
+            {
+                //var taskName = stringTable.@string.FirstOrDefault(s => s.key.Equals(task.name_key, StringComparison.InvariantCultureIgnoreCase));
+                //if (string.IsNullOrWhiteSpace(taskName.eng))
+                //{
+                //    Logger.Warning("Missing english translation for mision effect {textKey}", task.name_key);
+                //    taskName.eng = task.name;
+                //}
+
+                var Task = new TaskInfo(task.name_key, task.mode_type, task.category)
+                {
+                    Id = (uint)task.level_setting.id,
+                    Level = (uint)task.level_setting.level,
+                    Chance = (uint)task.level_setting.chance_value,
+                    AddChance = (uint)task.level_setting.add_chance_value,
+                    AddChanceLevelLimit = (uint)task.level_setting.add_chan_limit_lv,
+                    constant = false
+                };
+                Task.StartCondition = new SelectCondition
+                {
+                    KDR = task.level_setting.select_condition.kill_per_death?.value ?? 0,
+                    ExpRate = (ulong)(task.level_setting.select_condition.exp_rate?.value ?? 0),
+                    TDScore = task.level_setting.select_condition.touch_down_score?.value ?? 0,
+                    MinLevel = (uint)(task.level_setting.select_condition.min_level?.value ?? 0),
+                    MaxLevel = (uint)(task.level_setting.select_condition.max_level?.value ?? 0),
+                    License = 0,//(uint)task.level_setting.select_condition.have_license.value,
+                    Weapon = (uint)(task.level_setting.select_condition.have_weapon?.value ?? 0)
+                };
+                Task.EndCondition = new CompletionCondition
+                {
+                    game_play_ts = task.level_setting.complet_condition.game_play_ts?.value ?? 0,
+                    goal_of_match = task.level_setting.complet_condition.goal_of_match?.value ?? 0,
+                    number_of_team_person = task.level_setting.complet_condition.number_of_team_person?.value ?? 0,
+                    repetetion = task.level_setting.complet_condition.repetetion?.value ?? 0
+                };
+                Task.RewardPen = (uint)task.level_setting.reward.pen.value;
+
+                yield return Task;
             }
         }
 

@@ -34,6 +34,92 @@ namespace Netsphere.Database.Game
         public IList<PlayerLicenseDto> Licenses { get; set; } = new List<PlayerLicenseDto>();
         public IList<PlayerMailDto> Inbox { get; set; } = new List<PlayerMailDto>();
         public IList<PlayerSettingDto> Settings { get; set; } = new List<PlayerSettingDto>();
+
+        public IList<PlayerDeathMatchDto> DeathMatchInfo { get; set; } = new List<PlayerDeathMatchDto>();
+        public IList<PlayerTouchDownDto> TouchDownInfo { get; set; } = new List<PlayerTouchDownDto>();
+        public IList<PlayerChaserDto> ChaserInfo { get; set; } = new List<PlayerChaserDto>();
+        public IList<PlayerBattleRoyalDto> BattleRoyalInfo { get; set; } = new List<PlayerBattleRoyalDto>();
+        public IList<PlayerCaptainDto> CaptainInfo { get; set; } = new List<PlayerCaptainDto>();
+        public IList<PlayerMissionsDto> Missions { get; set; }
+    }
+
+    [Table("player_dminfos")]
+    public class PlayerDeathMatchDto
+    {
+        [Key]
+        [ForeignKey(nameof(Player))]
+        public int PlayerId { get; set; }
+        public PlayerDto Player { get; set; }
+
+        public ulong Won { get; set; }
+        public ulong Loss { get; set; }
+        public ulong Kills { get; set; }
+        public ulong KillAssists { get; set; }
+        public ulong Deaths { get; set; }
+    }
+
+    [Table("player_tdinfos")]
+    public class PlayerTouchDownDto
+    {
+        [Key]
+        [ForeignKey(nameof(Player))]
+        public int PlayerId { get; set; }
+        public PlayerDto Player { get; set; }
+
+        public ulong Won { get; set; }
+        public ulong Loss { get; set; }
+        public ulong TD { get; set; }
+        public ulong TDAssist { get; set; }
+        public ulong Offense { get; set; }
+        public ulong OffenseAssist { get; set; }
+        public ulong Defense { get; set; }
+        public ulong DefenseAssist { get; set; }
+        public ulong Kill { get; set; }
+        public ulong KillAssist { get; set; }
+        public ulong TDHeal { get; set; }
+        public ulong Heal { get; set; }
+    }
+
+    [Table("player_chsinfos")]
+    public class PlayerChaserDto
+    {
+        [Key]
+        [ForeignKey(nameof(Player))]
+        public int PlayerId { get; set; }
+        public PlayerDto Player { get; set; }
+
+        public ulong ChasedWon { get; set; }
+        public ulong ChasedRounds { get; set; }
+        public ulong ChaserWon { get; set; }
+        public ulong ChaserRounds { get; set; }
+    }
+
+    [Table("player_brinfos")]
+    public class PlayerBattleRoyalDto
+    {
+        [Key]
+        [ForeignKey(nameof(Player))]
+        public int PlayerId { get; set; }
+        public PlayerDto Player { get; set; }
+
+        public ulong Won { get; set; }
+        public ulong Loss { get; set; }
+        public ulong FirstKilled { get; set; }
+        public ulong FirstPlace { get; set; }
+    }
+
+    [Table("player_cptinfos")]
+    public class PlayerCaptainDto
+    {
+        [Key]
+        [ForeignKey(nameof(Player))]
+        public int PlayerId { get; set; }
+        public PlayerDto Player { get; set; }
+
+        public ulong Won { get; set; }
+        public ulong Loss { get; set; }
+        public ulong CPTKilled { get; set; }
+        public ulong CPTCount { get; set; }
     }
 
     [Table("player_characters")]
@@ -144,6 +230,30 @@ namespace Netsphere.Database.Game
 
         public string Setting { get; set; }
         public string Value { get; set; }
+    }
+
+    [Table("player_missions")]
+    public class PlayerMissionsDto
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
+
+        [ForeignKey(nameof(Player))]
+        public ulong PlayerId { get; set; }
+        public PlayerDto Player { get; set; }
+
+        public uint TaskId { get; set; }
+
+        public ushort Progress { get; set; }
+
+        public long Date { get; set; }
+
+        public byte RewardType { get; set; }
+
+        public ushort Reward { get; set; }
+
+        public byte Slot { get; set; }
     }
 
     [Table("shop_effect_groups")]

@@ -45,9 +45,9 @@ namespace Netsphere.Game.GameRules
             Briefing = new ChaserBriefing(this);
 
             StateMachine.Configure(GameRuleState.Waiting)
-                .PermitIf(GameRuleStateTrigger.StartGame, GameRuleState.FirstHalf, CanStartGame);
+                .PermitIf(GameRuleStateTrigger.StartGame, GameRuleState.Neutral, CanStartGame);
 
-            StateMachine.Configure(GameRuleState.FirstHalf)
+            StateMachine.Configure(GameRuleState.Neutral)
                 .SubstateOf(GameRuleState.Playing)
                 .Permit(GameRuleStateTrigger.StartResult, GameRuleState.EnteringResult)
                 .OnEntry(() =>
@@ -82,6 +82,13 @@ namespace Netsphere.Game.GameRules
             base.Cleanup();
         }
 
+        public override void PlayerLeft(object room, RoomPlayerEventArgs e)
+        {
+            if (StateMachine.IsInState(GameRuleState.FirstHalf))
+                e.Player.Chasser.ChaserWon++;
+            base.PlayerLeft(room, e);
+        }
+
         public override void Update(TimeSpan delta)
         {
             base.Update(delta);
@@ -93,7 +100,7 @@ namespace Netsphere.Game.GameRules
                 !StateMachine.IsInState(GameRuleState.Result) &&
                 RoundTime >= TimeSpan.FromSeconds(5)) // Let the round run for at least 5 seconds - Fixes StartResult trigger on game start(race condition)
             {
-                if (StateMachine.IsInState(GameRuleState.FirstHalf))
+                if (StateMachine.IsInState(GameRuleState.Neutral))
                 {
                     // Still have enough players?
                     if (teamMgr.PlayersPlaying.Count() < PlayersNeededToStart)
@@ -119,10 +126,11 @@ namespace Netsphere.Game.GameRules
                                 ChaserLose();
                         }
 
-                        if (!teamMgr.Values.Any(team => team.Values.Any(plr =>
+                        /*if (!teamMgr.Values.Any(team => team.Values.Any(plr =>
                                             plr != Chaser &&
                                             plr.RoomInfo.Mode == PlayerGameMode.Normal &&
-                                            plr.RoomInfo.State == PlayerState.Alive)))
+                                            plr.RoomInfo.State == PlayerState.Alive)))*/
+                        if (!GetPlayersAlive().Any())
                         {
                             ChaserWin();
                         }
@@ -140,6 +148,7 @@ namespace Netsphere.Game.GameRules
         {
             var stats = GetRecord(killer);
             stats.Kills++;
+            target.RoomInfo.State = PlayerState.Dead;
 
             if (killer == Chaser && target == Bonus)
             {
@@ -149,14 +158,17 @@ namespace Netsphere.Game.GameRules
 
             if(Chaser == target)
                 ChaserLose();
-
+            
             base.OnScoreKill(killer, null, target, attackAttribute);
         }
 
         public override void OnScoreSuicide(Player plr)
         {
-            if(Chaser == plr)
+            plr.RoomInfo.State = PlayerState.Dead;
+
+            if (Chaser == plr)
                 ChaserLose();
+
             base.OnScoreSuicide(plr);
         }
 
@@ -181,7 +193,11 @@ namespace Netsphere.Game.GameRules
             var index = _random.Next(0, Room.Players.Count);
             Chaser = Room.Players.Values.ElementAt(index);
             GetRecord(Chaser).ChaserCount++;
-            Room.Broadcast(new SChangeSlaughtererAckMessage(Chaser.Account.Id));
+
+            var playersId = (from a in GetPlayersAlive()
+                             select (ulong)0).ToArray();
+
+            Room.Broadcast(new SChangeSlaughtererAckMessage(Chaser.Account.Id, playersId));
             Bonus = GetBonus();
         }
 
@@ -256,7 +272,7 @@ namespace Netsphere.Game.GameRules
 
             var gameRule = (ChaserGameRule)GameRule;
             CurrentChaser = (long)(gameRule.Chaser?.Account.Id ?? 0);
-            //CurrentChaserTarget = 0;
+            CurrentChaserTarget = (long)(gameRule.Bonus?.Account.Id ?? 0);
             //Unk6 = 1;
 
             w.Write(CurrentChaser);

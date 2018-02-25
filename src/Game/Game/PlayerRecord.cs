@@ -53,9 +53,10 @@ namespace Netsphere.Game
             var rankUp = false;
             if (isResult)
             {
+                var expGain = GetExpGain(out bonusExp);
+                bonusPen = expGain / 2;
                 w.Write(GetPenGain(out bonusPen));
 
-                var expGain = GetExpGain(out bonusExp);
 
                 rankUp = Player.GainExp(expGain);
 

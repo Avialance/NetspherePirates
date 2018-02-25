@@ -43,7 +43,8 @@ namespace Netsphere.Game.GameRules
 
             StateMachine.Configure(GameRuleState.Result)
                 .SubstateOf(GameRuleState.Playing)
-                .Permit(GameRuleStateTrigger.EndGame, GameRuleState.Waiting);
+                .Permit(GameRuleStateTrigger.EndGame, GameRuleState.Waiting)
+                .OnEntry(UpdatePlayerStats);
         }
 
         public override void Initialize()
@@ -62,6 +63,15 @@ namespace Netsphere.Game.GameRules
             teamMgr.Remove(Team.Beta);
 
             base.Cleanup();
+        }
+
+        public override void PlayerLeft(object room, RoomPlayerEventArgs e)
+        {
+            if (StateMachine.IsInState(GameRuleState.FirstHalf)
+                || StateMachine.IsInState(GameRuleState.HalfTime)
+                || StateMachine.IsInState(GameRuleState.SecondHalf))
+                e.Player.DeathMatch.Loss++;
+            base.PlayerLeft(room, e);
         }
 
         public override void Update(TimeSpan delta)
@@ -110,6 +120,13 @@ namespace Netsphere.Game.GameRules
         public override void OnScoreKill(Player killer, Player assist, Player target, AttackAttribute attackAttribute)
         {
             killer.RoomInfo.Team.Score += 1;
+            killer.DeathMatch.Kills++;
+
+            if (assist != null)
+                assist.DeathMatch.KillAssists++;
+
+            target.DeathMatch.Deaths++;
+
             base.OnScoreKill(killer, assist, target, attackAttribute);
         }
 
@@ -135,6 +152,25 @@ namespace Netsphere.Game.GameRules
         private static DeathmatchPlayerRecord GetRecord(Player plr)
         {
             return (DeathmatchPlayerRecord)plr.RoomInfo.Stats;
+        }
+
+        private void UpdatePlayerStats()
+        {
+            var WinTeam = Room
+                .TeamManager
+                .PlayersPlaying
+                .Aggregate(
+                    (highestTeam, player) =>
+                    (highestTeam == null || player.RoomInfo.Team.Score > highestTeam.RoomInfo.Team.Score) ?
+                    player : highestTeam).RoomInfo.Team;
+
+            foreach (var plr in Room.TeamManager.PlayersPlaying)
+            {
+                if (plr.RoomInfo.Team == WinTeam)
+                    plr.DeathMatch.Won++;
+                else
+                    plr.DeathMatch.Loss++;
+            }
         }
     }
 
