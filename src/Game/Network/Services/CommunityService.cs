@@ -113,6 +113,11 @@ namespace Netsphere.Network.Services
                 trg_settings.Contains(name) && trg_settings.Get<CommunitySetting>(name) == CommunitySetting.Allow;
 
             session.SendAsync(new SFriendAckMessage(allowFriendReq ? 0 : 2));
+
+            if (allowFriendReq)
+            {
+                // How handle it?
+            }
         }
     }
 }

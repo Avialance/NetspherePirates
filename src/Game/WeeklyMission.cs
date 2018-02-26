@@ -21,15 +21,16 @@ namespace Netsphere
         // ReSharper disable once InconsistentNaming
         private static readonly ILogger Logger = Log.ForContext(Constants.SourceContextPropertyName, nameof(WeeklyMission));
         private readonly List<PlayerMissionsDto> _tasksR;
-        private int _rMissions;
+        private List<PlayerMissionsDto> _taskOnGoing;
         private int _rMRunning;
-        private int _wMissions;
         private int _wMRunning;
 
         public Player Player { get; set; }
 
         public WeeklyMission(Player plr, PlayerDto plrDto)
         {
+            int _rMissions;
+            int _wMissions;
             Player = plr;
             _tasksR = new List<PlayerMissionsDto>();
 

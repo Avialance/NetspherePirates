@@ -50,6 +50,9 @@ namespace Netsphere.Resource
 
             Logger.Information("Caching: GameTempos");
             GetGameTempos();
+
+            Logger.Information("Caching: Level Rewards");
+            GetLevelRewards();
         }
 
         public IReadOnlyList<ChannelInfo> GetChannels()
@@ -165,6 +168,20 @@ namespace Netsphere.Resource
                 Logger.Debug("Caching...");
 
                 value = _loader.LoadGameTempos().ToDictionary(t => t.Name);
+                _cache.Set(ResourceCacheType.GameTempo, value);
+            }
+
+            return value;
+        }
+
+        public IReadOnlyDictionary<byte, LevelReward> GetLevelRewards()
+        {
+            var value = _cache.Get<IReadOnlyDictionary<byte, LevelReward>>(ResourceCacheType.LevelRewards);
+            if (value == null)
+            {
+                Logger.Debug("Caching...");
+
+                value = _loader.LoadLevelRewards().ToDictionary(t => t.Level);
                 _cache.Set(ResourceCacheType.GameTempo, value);
             }
 

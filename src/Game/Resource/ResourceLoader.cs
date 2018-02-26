@@ -287,6 +287,22 @@ namespace Netsphere.Resource
             }
         }
 
+        public IEnumerable<LevelReward> LoadLevelRewards()
+        {
+            var dto = Deserialize<LevelRewardDto>("xml/level_reward.xml");
+
+            foreach (var level in dto.Levels)
+            {
+                var ret = new LevelReward
+                {
+                    Level = (byte)level.number,
+                    Pen = level.pen
+                };
+
+                yield return ret;
+            }
+        }
+
         #region DefaultItems
 
         public IEnumerable<DefaultItem> LoadDefaultItems()

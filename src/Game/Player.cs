@@ -215,10 +215,24 @@ namespace Netsphere
                 Logger.ForAccount(this)
                     .Debug("Leveled up to {level}", newLevel);
 
-                // ToDo level rewards
-
                 Level++;
                 leveledUp = true;
+                var lvr = GameServer.Instance.ResourceCache.GetLevelRewards();
+
+                var reward = lvr.GetValueOrDefault(Level);
+                if (reward != null)
+                {
+                    PEN += (uint)reward.Pen;
+
+                    Logger.ForAccount(Account)
+                        .Information($"[Level Reward] Level {Level} - Reward {reward.Pen}PEN");
+
+                    Session.SendAsync(new SRefreshCashInfoAckMessage
+                    {
+                        PEN = PEN,
+                        AP = AP
+                    });
+                }
             }
 
             if (!leveledUp)

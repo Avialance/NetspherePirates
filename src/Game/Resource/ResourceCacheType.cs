@@ -10,6 +10,7 @@ namespace Netsphere.Resource
         Exp,
         Maps,
         GameTempo,
-        Tasks
+        Tasks,
+        LevelRewards
     }
 }
