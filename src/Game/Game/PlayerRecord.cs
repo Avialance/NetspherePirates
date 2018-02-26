@@ -50,16 +50,16 @@ namespace Netsphere.Game
 
             uint bonusPen = 0;
             uint bonusExp = 0;
+            uint MissionEXP = 0;
             var rankUp = false;
             if (isResult)
             {
                 var expGain = GetExpGain(out bonusExp);
-                bonusPen = expGain / 2;
                 w.Write(GetPenGain(out bonusPen));
 
+                Player.Mission.Commit(out MissionEXP);
 
-                rankUp = Player.GainExp(expGain);
-
+                rankUp = Player.GainExp(expGain + MissionEXP);
                 w.Write(expGain);
             }
             else

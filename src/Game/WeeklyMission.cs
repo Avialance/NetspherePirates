@@ -20,8 +20,8 @@ namespace Netsphere
 
         // ReSharper disable once InconsistentNaming
         private static readonly ILogger Logger = Log.ForContext(Constants.SourceContextPropertyName, nameof(WeeklyMission));
-        private readonly List<PlayerMissionsDto> _tasksR;
-        private List<PlayerMissionsDto> _taskOnGoing;
+        private Dictionary<uint, PlayerMissionsDto> _tasksR;
+        private Dictionary<uint, ushort> _taskOnGoing;
         private int _rMRunning;
         private int _wMRunning;
 
@@ -32,7 +32,7 @@ namespace Netsphere
             int _rMissions;
             int _wMissions;
             Player = plr;
-            _tasksR = new List<PlayerMissionsDto>();
+            _tasksR = new Dictionary<uint, PlayerMissionsDto>();
 
             var TaskList = GameServer.Instance.ResourceCache.GetTasks();
 
@@ -66,7 +66,7 @@ namespace Netsphere
                             _wMRunning++;
                     }
 
-                    _tasksR.Add(task);
+                    _tasksR.Add(task.TaskId, task);
                     Logger.ForAccount(Player)
                             .Debug($"Mission {task.Id} - {t.Name}, progress {task.Progress}/{t.EndCondition.repetetion}");
                 }
@@ -87,14 +87,14 @@ namespace Netsphere
                     foreach (var task in RCMissionList)
                     {
                         if (task.GetChance(plr) < rand.Next(100)
-                            || _tasksR.Any(t => t.TaskId == task.Id))
+                            || _tasksR.ContainsKey(task.Id))
                             continue;
                         if (_rMRunning >= MaxRuningTask)
                             break;
 
                         var rt = (task.RewardExp != 0) ? rand.Next(1, 2) : 1;
 
-                        _tasksR.Add(new PlayerMissionsDto
+                        _tasksR.Add(task.Id, new PlayerMissionsDto
                         {
                             TaskId = task.Id,
                             PlayerId = plr.Account.Id,
@@ -127,12 +127,12 @@ namespace Netsphere
                         if (_wMRunning >= MaxRuningTask)
                             break;
                         if (task.GetChance(plr) < rand.Next(100)
-                            || _tasksR.Any(t => t.TaskId == task.Id))
+                            || _tasksR.ContainsKey(task.Id))
                             continue;
 
                         var rt = (task.RewardExp != 0) ? rand.Next(1,2) : 1;
 
-                        _tasksR.Add(new PlayerMissionsDto
+                        _tasksR.Add(task.Id, new PlayerMissionsDto
                         {
                             TaskId = task.Id,
                             PlayerId = plr.Account.Id,
@@ -158,8 +158,9 @@ namespace Netsphere
 
             var result = new List<TaskDto>();
 
-            foreach (var task in _tasksR)
+            foreach (var taskKeyPair in _tasksR)
             {
+                var task = taskKeyPair.Value;
                 result.Add(new TaskDto
                 {
                     Id = task.TaskId,
@@ -195,7 +196,7 @@ namespace Netsphere
                     foreach (var tt in tasks)
                     {
                         if (tt.GetChance(Player) < rand.Next(100)
-                            || _tasksR.Any(t => t.TaskId == tt.Id))
+                            || _tasksR.ContainsKey(tt.Id))
                             continue;
 
                         task = tt;
@@ -212,7 +213,7 @@ namespace Netsphere
                 var rt = (task.RewardExp != 0) ? rand.Next(1, 2) : 1;
                 var reward = (rt == 1 ? task.RewardPen : task.RewardExp);
 
-                _tasksR.Add(new PlayerMissionsDto
+                _tasksR.Add(task.Id, new PlayerMissionsDto
                 {
                     TaskId = task.Id,
                     PlayerId = Player.Account.Id,
@@ -242,31 +243,79 @@ namespace Netsphere
         {
             var TaskInfo = GameServer.Instance.ResourceCache.GetTasks();
 
-            if (_tasksR.Exists(t => t.TaskId == Taskid))
+            if (_tasksR.ContainsKey(Taskid))
             {
-                var task = _tasksR.Find(t => t.TaskId == Taskid);
+                if (!_taskOnGoing.ContainsKey(Taskid))
+                    _taskOnGoing.Add(Taskid, 0);
+
                 var repetition = (ushort)TaskInfo[Taskid].EndCondition.repetetion;
-                task.Progress++;
 
-                if (task.Progress == repetition)
-                {
-                    Player.PEN += task.Reward;
-                    if (task.RewardType == 2)
-                        Player.GainExp(task.Reward);
-
-                    Player.Session.SendAsync(new SRefreshCashInfoAckMessage { PEN = Player.PEN, AP = Player.AP });
-                }
-
-                if (task.Progress > repetition)
-                {
-                    task.Progress = repetition;
+                if (_taskOnGoing[Taskid] < repetition)
+                    _taskOnGoing[Taskid]++;
+                else
                     return 0xffff;
-                }
 
-                return task.Progress;
+                return _taskOnGoing[Taskid];
+
+                //if (_taskOnGoing[Taskid] == repetition)
+                //{
+                //    Player.PEN += task.Reward;
+                //    if (task.RewardType == 2)
+                //        Player.GainExp(task.Reward);
+
+                //    Player.Session.SendAsync(new SRefreshCashInfoAckMessage { PEN = Player.PEN, AP = Player.AP });
+                //}
+
+                //if (task.Progress > repetition)
+                //{
+                //    task.Progress = repetition;
+                //    return 0xffff;
+                //}
+
+                //return task.Progress;
             }
 
             return 0;
+        }
+
+        public void Commit(out uint EXP)
+        {
+            var TaskList = GameServer.Instance.ResourceCache.GetTasks();
+            EXP = 0;
+            var _needsUpdate = false;
+
+            foreach (var onGoin in _taskOnGoing)
+            {
+                _tasksR[onGoin.Key].Progress = onGoin.Value;
+                if (_tasksR[onGoin.Key].Progress == TaskList[onGoin.Key].EndCondition.repetetion)
+                {
+                    var rewPEN = TaskList[onGoin.Key].RewardPen;
+                    Player.PEN += rewPEN;
+                    _needsUpdate = true;
+                    Logger
+                        .ForAccount(Player.Account)
+                        .Information($"Mission {onGoin.Key} Rewards {rewPEN}PEN 0EXP");
+                }
+            }
+
+            if (_needsUpdate)
+            {
+                Player
+                    .Session
+                    .SendAsync(new SRefreshCashInfoAckMessage
+                    {
+                        PEN = Player.PEN,
+                        AP = Player.AP
+                    });
+            }
+        }
+
+        public void OnGoinClear()
+        {
+            _taskOnGoing.Clear();
+            Logger
+                .ForAccount(Player.Account)
+                .Information("Player leave the room, lose missions progress");
         }
 
         public void Save(IDbConnection db)

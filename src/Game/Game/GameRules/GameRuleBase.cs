@@ -41,7 +41,9 @@ namespace Netsphere.Game.GameRules
         { }
 
         public virtual void PlayerLeft(object room, RoomPlayerEventArgs e)
-        { }
+        {
+            e.Player.Mission.OnGoinClear();
+        }
 
         public virtual void Update(TimeSpan delta)
         {
@@ -113,30 +115,21 @@ namespace Netsphere.Game.GameRules
         public virtual void OnScoreKill(Player killer, Player assist, Player target, AttackAttribute attackAttribute)
         {
             killer.RoomInfo.Stats.Kills++;
-            if (target != null)
+            target.RoomInfo.Stats.Deaths++;
+
+            if (assist != null)
             {
-                target.RoomInfo.Stats.Deaths++;
+                assist.RoomInfo.Stats.KillAssists++;
 
-                if (assist != null)
-                {
-                    assist.RoomInfo.Stats.KillAssists++;
-
-                    Room.Broadcast(
-                        new SScoreKillAssistAckMessage(new ScoreAssistDto(killer.RoomInfo.PeerId, assist.RoomInfo.PeerId,
-                            target.RoomInfo.PeerId, attackAttribute)));
-                }
-                else
-                {
-                    Room.Broadcast(
-                        new SScoreKillAckMessage(new ScoreDto(killer.RoomInfo.PeerId, target.RoomInfo.PeerId,
-                            attackAttribute)));
-                }
+                Room.Broadcast(
+                    new SScoreKillAssistAckMessage(new ScoreAssistDto(killer.RoomInfo.PeerId, assist.RoomInfo.PeerId,
+                        target.RoomInfo.PeerId, attackAttribute)));
             }
             else
             {
                 Room.Broadcast(
-                       new SScoreKillAckMessage(new ScoreDto(killer.RoomInfo.PeerId, 0,
-                           attackAttribute)));
+                    new SScoreKillAckMessage(new ScoreDto(killer.RoomInfo.PeerId, target.RoomInfo.PeerId,
+                        attackAttribute)));
             }
         }
 
