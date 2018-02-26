@@ -378,7 +378,8 @@ namespace Netsphere.Game.GameRules
 
         public override uint GetExpGain(out uint bonusExp)
         {
-            base.GetExpGain(out bonusExp);
+            return GetExpGain(Config.Instance.Game.TouchdownExpRates, out bonusExp);
+            /*base.GetExpGain(out bonusExp);
 
             var config = Config.Instance.Game.TouchdownExpRates;
             var place = 1;
@@ -417,7 +418,7 @@ namespace Netsphere.Game.GameRules
             return (uint)(TotalScore * config.ScoreFactor +
                 rankingBonus +
                 plrs.Length * config.PlayerCountFactor +
-                Player.RoomInfo.PlayTime.TotalMinutes * config.ExpPerMin);
+                Player.RoomInfo.PlayTime.TotalMinutes * config.ExpPerMin);*/
         }
     }
 

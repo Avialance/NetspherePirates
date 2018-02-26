@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using BlubLib.IO;
 
 // ReSharper disable once CheckNamespace
@@ -28,6 +29,51 @@ namespace Netsphere.Game
         {
             bonusExp = 0;
             return 0;
+        }
+
+        public uint GetExpGain(ExperienceRates ExpRates, out uint bonusExp)
+        {
+            var place = 1;
+            var plrs = Player.Room.TeamManager.Players
+                .Where(plr => plr.RoomInfo.State == PlayerState.Waiting &&
+                    plr.RoomInfo.Mode == PlayerGameMode.Normal)
+                .ToArray();
+
+            foreach (var plr in plrs.OrderByDescending(plr => plr.RoomInfo.Stats.TotalScore))
+            {
+                if (plr == Player)
+                    break;
+
+                place++;
+                if (place > 3)
+                    break;
+            }
+
+            var rankingBonus = 1.0f;
+            switch (place)
+            {
+                case 1:
+                    rankingBonus += ExpRates.FirstPlaceBonus / 100.0f;
+                    break;
+
+                case 2:
+                    rankingBonus += ExpRates.SecondPlaceBonus / 100.0f;
+                    break;
+
+                case 3:
+                    rankingBonus += ExpRates.ThirdPlaceBonus / 100.0f;
+                    break;
+            }
+
+            var TimeExp = ExpRates.ExpPerMin * Player.RoomInfo.PlayTime.Minutes;
+            var PlayersExp = plrs.Length * ExpRates.PlayerCountFactor;
+            var ScoreExp = ExpRates.ExpPerMin * TotalScore;
+
+            var ExpGained = (TimeExp + PlayersExp + ScoreExp) * rankingBonus;
+
+            bonusExp = (uint)(ExpGained * Player.GetExpRate());
+
+            return (uint)ExpGained + bonusExp;
         }
 
         public virtual void Reset()

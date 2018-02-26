@@ -258,14 +258,30 @@ namespace Netsphere
                    GetAttributeValue(Attribute.HP);
         }
 
+        /// <summary>
+        /// Gets the Chaser Cast Rate
+        /// </summary>
         public float GetChaserRate()
         {
             return GetAttributeRate(Attribute.ChaserCastRate);
         }
 
+        /// <summary>
+        /// Gets the Chaser Move Speed
+        /// </summary>
         public float GetChaserMoveSpeed()
         {
             return GetAttributeValue(Attribute.ChaserMovespeed);
+        }
+
+        public float GetExpRate()
+        {
+            return GetAttributeRate(Attribute.EXP);
+        }
+
+        public float GetPenRate()
+        {
+            return GetAttributeRate(Attribute.PEN);
         }
 
         /// <summary>

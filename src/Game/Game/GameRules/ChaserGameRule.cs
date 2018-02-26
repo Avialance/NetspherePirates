@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using BlubLib.IO;
+using Netsphere.Network;
 using Netsphere.Network.Message.GameRule;
 
 // ReSharper disable once CheckNamespace
@@ -148,7 +149,7 @@ namespace Netsphere.Game.GameRules
         {
             var stats = GetRecord(killer);
             stats.Kills++;
-            target.RoomInfo.State = PlayerState.Dead;
+            //target.RoomInfo.State = PlayerState.Dead;
 
             if (killer == Chaser && target == Bonus)
             {
@@ -164,7 +165,7 @@ namespace Netsphere.Game.GameRules
 
         public override void OnScoreSuicide(Player plr)
         {
-            plr.RoomInfo.State = PlayerState.Dead;
+            //plr.RoomInfo.State = PlayerState.Dead;
 
             if (Chaser == plr)
                 ChaserLose();
@@ -195,7 +196,7 @@ namespace Netsphere.Game.GameRules
             GetRecord(Chaser).ChaserCount++;
 
             var playersId = (from a in GetPlayersAlive()
-                             select (ulong)0).ToArray();
+                             select (ulong)a.RoomInfo.PeerId.PeerId).ToArray();
 
             Room.Broadcast(new SChangeSlaughtererAckMessage(Chaser.Account.Id, playersId));
             Bonus = GetBonus();
@@ -402,6 +403,11 @@ namespace Netsphere.Game.GameRules
                 BonusKills * 4 +
                 Wins * 5 +
                 Survived * 10;
+        }
+
+        public override uint GetExpGain(out uint bonusExp)
+        {
+            return GetExpGain(Config.Instance.Game.ChaserExpRates, out bonusExp);
         }
     }
 }
