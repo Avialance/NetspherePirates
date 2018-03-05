@@ -182,7 +182,7 @@ namespace Netsphere
 
             Broadcast(new SEnteredPlayerAckMessage(plr.Map<Player, RoomPlayerDto>()));
             plr.Session.SendAsync(new SSuccessEnterRoomAckMessage(this.Map<Room, EnterRoomInfoDto>()));
-            plr.Session.SendAsync(new SIdsInfoAckMessage(0, plr.RoomInfo.Slot));
+            plr.Session.SendAsync(new SIdsInfoAckMessage(1, plr.RoomInfo.Slot));
             plr.Session.SendAsync(new SEnteredPlayerListAckMessage(_players.Values.Select(p => p.Map<Player, RoomPlayerDto>()).ToArray()));
             OnPlayerJoining(new RoomPlayerEventArgs(plr));
         }
@@ -297,7 +297,7 @@ namespace Netsphere
                 return;
             }
 
-            if (options.MatchKey.PlayerLimit < Players.Count)
+            if (Math.Max(options.MatchKey.PlayerLimit, 1) < Players.Count)
             {
                 Logger.ForAccount(Master)
                     .Error("Room has more players than the selected player limit");

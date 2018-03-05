@@ -16,6 +16,7 @@ namespace Netsphere
     {
         private int _durability;
         private uint _count;
+        private long _playTime;
 
         internal bool ExistsInDatabase { get; set; }
         internal bool NeedsToSave { get; set; }
@@ -26,10 +27,22 @@ namespace Netsphere
         public ItemNumber ItemNumber { get; }
         public ItemPriceType PriceType { get; }
         public ItemPeriodType PeriodType { get; }
-        public ushort Period { get; }
+        public ushort Period { get; set; }
         public byte Color { get; }
         public uint Effect { get; }
         public DateTimeOffset PurchaseDate { get; }
+        public TimeSpan PlayTime
+        {
+            get => new TimeSpan(_playTime);
+            set
+            {
+                if (_playTime == value.Seconds)
+                    return;
+                _playTime = value.Seconds;
+                NeedsToSave = true;
+            }
+        }
+
         public int Durability
         {
             get => _durability;
@@ -53,7 +66,40 @@ namespace Netsphere
             }
         }
 
-        public DateTimeOffset ExpireDate => PeriodType == ItemPeriodType.Days ? PurchaseDate.AddDays(Period) : DateTimeOffset.MinValue;
+        //public DateTimeOffset ExpireDate => PeriodType == ItemPeriodType.Days ? PurchaseDate.AddDays(Period) : DateTimeOffset.MinValue;
+        public long ExpireDate => PeriodType == ItemPeriodType.Days ? Expire() : -1;
+        public int TimeLeft => PeriodType == ItemPeriodType.Hours ? (int)Expire() : int.MaxValue;
+
+        private long Expire()
+        {
+            switch (PeriodType)
+            {
+                case ItemPeriodType.None:
+                    return uint.MaxValue;
+
+                case ItemPeriodType.Days:
+                    {
+                        var left = PurchaseDate.AddDays(Period) - DateTime.Now;
+                        if (left.Seconds > 0)
+                            return (long)left.TotalSeconds;
+                    }
+
+                    return 0;
+                case ItemPeriodType.Hours:
+                    {
+                        var left = (PurchaseDate.AddHours(Period) - PurchaseDate.Add(PlayTime)).TotalSeconds;
+                        if (left > int.MaxValue)
+                            return int.MaxValue;
+
+                        if (left > 0)
+                            return (int)left;
+                    }
+
+                    return 0;
+            }
+
+            return 0;
+        }
 
         internal PlayerItem(Inventory inventory, PlayerItemDto dto)
         {
@@ -70,7 +116,7 @@ namespace Netsphere
 
             PriceType = priceGroup.PriceType;
             PeriodType = price.PeriodType;
-            Period = price.Period;
+            Period = (ushort)dto.Period;
             Color = dto.Color;
             Effect = dto.Effect;
             PurchaseDate = DateTimeOffset.FromUnixTimeSeconds(dto.PurchaseDate);

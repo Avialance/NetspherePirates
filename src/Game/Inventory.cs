@@ -77,6 +77,11 @@ namespace Netsphere
             return item;
         }
 
+        public void Update(PlayerItem item)
+        {
+            Player.Session.SendAsync(new SInventoryActionAckMessage(InventoryAction.Update, item.Map<PlayerItem, ItemDto>()));
+        }
+
         /// <summary>
         /// Removes the item from the inventory
         /// </summary>
@@ -105,6 +110,13 @@ namespace Netsphere
 
         internal void Save(IDbConnection db)
         {
+            if (Player.Room == null)
+            {
+                var ExpireItems = from it in _items
+                                  where it.Value.TimeLeft <= 0
+                                  select it.Value;
+            }
+
             if (!_itemsToDelete.IsEmpty)
             {
                 var idsToRemove = new StringBuilder();
@@ -133,6 +145,7 @@ namespace Netsphere
                         PlayerId = (int)Player.Account.Id,
                         ShopItemInfoId = item.GetShopItemInfo().Id,
                         ShopPriceId = item.GetShopItemInfo().PriceGroup.GetPrice(item.PeriodType, item.Period).Id,
+                        Period = item.Period,
                         Effect = item.Effect,
                         Color = item.Color,
                         PurchaseDate = item.PurchaseDate.ToUnixTimeSeconds(),
@@ -152,6 +165,7 @@ namespace Netsphere
                         PlayerId = (int)Player.Account.Id,
                         ShopItemInfoId = item.GetShopItemInfo().Id,
                         ShopPriceId = item.GetShopPrice().Id,
+                        Period = item.Period,
                         Effect = item.Effect,
                         Color = item.Color,
                         PurchaseDate = item.PurchaseDate.ToUnixTimeSeconds(),

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using BlubLib.DotNetty.Handlers.MessageHandling;
 using BlubLib.IO;
+using ExpressMapper.Extensions;
 using Netsphere.Network.Data.Game;
 using Netsphere.Network.Message.Game;
 using ProudNet.Handlers;
@@ -246,6 +247,7 @@ namespace Netsphere.Network.Services
                             session.SendAsync(new SBuyItemAckMessage(ItemBuyResult.NotEnoughMoney));
                             return;
                         }
+
                         plr.PEN -= (uint)price.Price;
                         break;
 
@@ -256,7 +258,24 @@ namespace Netsphere.Network.Services
                             session.SendAsync(new SBuyItemAckMessage(ItemBuyResult.NotEnoughMoney));
                             return;
                         }
+
                         plr.AP -= (uint)price.Price;
+                        break;
+
+                    case ItemPriceType.CP:
+                        {
+                            var CP = plr.Inventory.FirstOrDefault(p => p.ItemNumber == 6000001);
+                            if (CP == null || CP.Count < price.Price)
+                            {
+                                session.SendAsync(new SBuyItemAckMessage(ItemBuyResult.NotEnoughMoney));
+                                return;
+                            }
+
+                            CP.Count -= (uint)price.Price;
+
+                            session.SendAsync(new SInventoryActionAckMessage(InventoryAction.Update, CP.Map<PlayerItem, ItemDto>()));
+                        }
+
                         break;
 
                     default:
@@ -290,7 +309,15 @@ namespace Netsphere.Network.Services
 
             session.SendAsync(new SRandomShopItemInfoAckMessage
             {
-                Item = new RandomShopItemDto()
+                Item = new RandomShopItemDto
+                {
+                    Unk1 = 2010001,
+                    Unk2 = 1,
+                    Unk3 = 2,
+                    Unk4 = 3,
+                    Unk5 = 4,
+                    Unk6 = 6
+                }
             });
             //session.Send(new SRandomShopItemInfoAckMessage
             //{

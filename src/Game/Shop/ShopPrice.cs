@@ -26,7 +26,10 @@ namespace Netsphere.Shop
 
         public ShopPrice GetPrice(ItemPeriodType periodType, ushort period)
         {
-            return Prices.FirstOrDefault(p => p.PeriodType == periodType && p.Period == period);
+            var price = Prices.FirstOrDefault(p => p.PeriodType == periodType && p.Period == period);
+            if (price == null)
+                return Prices.FirstOrDefault(p => p.PeriodType == periodType);
+            return price;
         }
     }
 

@@ -53,6 +53,9 @@ namespace Netsphere.Resource
 
             Logger.Information("Caching: Level Rewards");
             GetLevelRewards();
+
+            Logger.Information("Caching: Item Rewards");
+            GetItemRewards();
         }
 
         public IReadOnlyList<ChannelInfo> GetChannels()
@@ -182,7 +185,21 @@ namespace Netsphere.Resource
                 Logger.Debug("Caching...");
 
                 value = _loader.LoadLevelRewards().ToDictionary(t => t.Level);
-                _cache.Set(ResourceCacheType.GameTempo, value);
+                _cache.Set(ResourceCacheType.LevelRewards, value);
+            }
+
+            return value;
+        }
+
+        public IReadOnlyDictionary<ulong, CapsuleReward> GetItemRewards()
+        {
+            var value = _cache.Get<IReadOnlyDictionary<ulong, CapsuleReward>>(ResourceCacheType.ItemRewards);
+            if (value == null)
+            {
+                Logger.Debug("Caching...");
+
+                value = _loader.LoadItemRewards().ToDictionary(t => (ulong)t.Item);
+                _cache.Set(ResourceCacheType.ItemRewards, value);
             }
 
             return value;

@@ -545,7 +545,7 @@ namespace Netsphere.Network.Services
                 return;
             killer.RoomInfo.PeerId = message.Score.Killer;
 
-            room.GameRuleManager.GameRule.OnScoreKill(killer, null, plr, message.Score.Weapon);
+            room.GameRuleManager.GameRule.OnScoreTeamKill(killer, plr, message.Score.Weapon);
         }
 
         [MessageHandler(typeof(CScoreHealAssistReqMessage))]
@@ -606,6 +606,105 @@ namespace Netsphere.Network.Services
 
             if (room.Options.MatchKey.GameRule == GameRule.Touchdown)
                 ((TouchdownGameRule)room.GameRuleManager.GameRule).OnScoreGoal(target);
+        }
+
+        [MessageHandler(typeof(CMissionScoreReqMessage))]
+        public void CMissionScoreReq(GameSession session, CMissionScoreReqMessage message)
+        {
+            Logger
+                .ForAccount(session.Player.Account)
+                .Debug($"MissionScore {message.Unk}");
+
+            session.SendAsync(new SMissionScoreAckMessage { Unk1 = session.Player.Account.Id, Unk2 = message.Unk });
+            session.SendAsync(new SMissionNotifyAckMessage { Unk = message.Unk });
+        }
+
+        [MessageHandler(typeof(CArcadeAttackPointReqMessage))]
+        public void CArcadeAttackPointReq(GameSession session, CArcadeAttackPointReqMessage message)
+        { }
+
+        [MessageHandler(typeof(CArcadeScoreSyncReqMessage))]
+        public void CArcadeScoreSyncReq(GameSession session, CArcadeScoreSyncReqMessage message)
+        { }
+
+        [MessageHandler(typeof(CArcadeBeginRoundReqMessage))]
+        public void CArcadeBeginRoundReq(GameSession session, CArcadeBeginRoundReqMessage message)
+        {
+            Logger.ForAccount(session.Player.Account)
+               .Debug($"Arcade Begin Round {message.Unk1} {message.Unk2}");
+
+            session.SendAsync(new SArcadeBeginRoundAckMessage { Unk1 = message.Unk1, Unk2 = message.Unk2 });
+        }
+
+        [MessageHandler(typeof(CArcadeStageClearReqMessage))]
+        public void CArcadeStageClearReq(GameSession session, CArcadeStageClearReqMessage message)
+        { }
+
+        [MessageHandler(typeof(CArcadeStageFailedReqMessage))]
+        public void CArcadeStageFailedReq(GameSession session, CArcadeStageFailedReqMessage message)
+        { }
+
+        [MessageHandler(typeof(CArcadeStageInfoReqMessage))]
+        public void CArcadeStageInfoReq(GameSession session, CArcadeStageInfoReqMessage message)
+        {
+            Logger.ForAccount(session.Player.Account)
+               .Debug($"Arcade Stage Info {message.Unk1} {message.Unk2}");
+
+            session.SendAsync(new SArcadeStageInfoAckMessage { Unk1 = message.Unk1, Unk2 = message.Unk2 });
+        }
+
+        [MessageHandler(typeof(CArcadeEnablePlayTimeReqMessage))]
+        public void CArcadeEnablePlayTimeReq(GameSession session, CArcadeEnablePlayTimeReqMessage message)
+        {
+            Logger.ForAccount(session.Player.Account)
+                .Debug($"Arcade Playtime {message.Unk}");
+
+            session.SendAsync(new SArcadeEnablePlayeTimeAckMessage { Unk = message.Unk });
+        }
+
+        [MessageHandler(typeof(CArcadeRespawnReqMessage))]
+        public void CArcadeRespawnReq(GameSession session, CArcadeRespawnReqMessage message)
+        {
+            Logger.ForAccount(session.Player.Account)
+                .Debug($"Arcade Respawn {message.Unk1} {message.Unk2}");
+
+            session.SendAsync(new SArcadeRespawnAckMessage { Unk = 0 });
+        }
+
+        [MessageHandler(typeof(CArcadeStageReadyReqMessage))]
+        public void CArcadeStageReadyReq(GameSession session, CArcadeStageReadyReqMessage message)
+        {
+            Logger.ForAccount(session.Player.Account)
+                .Debug($"Arcade Stage Ready {message.Unk1} {message.Unk2}");
+
+            session.Player.Room.Broadcast(new SArcadeStageReadyAckMessage { AccountId = session.Player.Account.Id });
+        }
+
+        [MessageHandler(typeof(CArcadeStageSelectReqMessage))]
+        public void CArcadeStageSelectReq(GameSession session, CArcadeStageSelectReqMessage message)
+        {
+            Logger.ForAccount(session.Player.Account)
+                .Debug($"Arcade Stage Slect {message.Unk1} {message.Unk2}");
+
+            session.SendAsync(new SArcadeStageSelectAckMessage { Unk1 = message.Unk1, Unk2 = message.Unk2 });
+        }
+
+        [MessageHandler(typeof(CArcadeLoadingSucceesReqMessage))]
+        public void CArcadeLoadingSucceesReq(GameSession session, CArcadeLoadingSucceesReqMessage message)
+        {
+            var plr = session.Player;
+            var room = plr.Room;
+
+            var target = room.Players.GetValueOrDefault(plr.Account.Id);
+            if (target == null)
+                return;
+
+            if (room.Options.MatchKey.GameRule != GameRule.Arcade)
+                return;
+
+            var Arcade = ((ArcadeGameRule)room.GameRuleManager.GameRule);
+
+            Arcade.OnLoadingOk(plr);
         }
 
         #endregion

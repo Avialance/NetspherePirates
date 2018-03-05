@@ -1,11 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Linq;
 using BlubLib.DotNetty.Handlers.MessageHandling;
 using Netsphere.Network.Data.Game;
 using Netsphere.Network.Message.Game;
 using ProudNet.Handlers;
 using Serilog;
 using Serilog.Core;
+using ExpressMapper.Extensions;
 
 namespace Netsphere.Network.Services
 {
@@ -175,15 +178,75 @@ namespace Netsphere.Network.Services
         [MessageHandler(typeof(CUseCapsuleReqMessage))]
         public void UseCapsuleReq(GameSession session, CUseCapsuleReqMessage message)
         {
-            session.SendAsync(new SServerResultInfoAckMessage((ServerResult)1));
-            //session.SendAsync(new SUseCapsuleAckMessage(new List<CapsuleRewardDto>
-            //{
-            //    new CapsuleRewardDto(CapsuleRewardType.Item, 0, 64, 0),
-            //    new CapsuleRewardDto(CapsuleRewardType.Item, 0, 154, 123),
-            //    new CapsuleRewardDto(CapsuleRewardType.PEN, 9999, 0, 0),
-            //    //new CapsuleRewardDto(CapsuleRewardType.PEN, 2, 0, 0),
-            //    //new CapsuleRewardDto(CapsuleRewardType.PEN, 3, 0, 0),
-            //}, 3));
+            var ItemBags = GameServer.Instance.ResourceCache.GetItemRewards();
+            var plr = session.Player;
+            var item = plr.Inventory[message.ItemId];
+
+            if (!ItemBags.ContainsKey(item.ItemNumber))
+            {
+                session.SendAsync(new SServerResultInfoAckMessage(ServerResult.DBError));
+                return;
+            }
+
+            item.Count--;
+            if (item.Count <= 0)
+                plr.Inventory.Remove(item);
+            else
+                session.SendAsync(new SInventoryActionAckMessage(InventoryAction.Update, item.Map<PlayerItem, ItemDto>()));
+
+            var ItemBag = ItemBags[item.ItemNumber];
+
+            var Rewards = (from bag in ItemBag.Bags
+                          let reward = bag.Take()
+                          select new CapsuleRewardDto
+                          {
+                              RewardType = reward.Type,
+                              ItemNumber = reward.Item,
+                              PriceType = reward.PriceType,
+                              PeriodType = reward.PeriodType,
+                              Period = reward.Period,
+                              PEN = reward.PEN,
+                              Effect = reward.Effect,
+                          }).ToArray();
+
+            foreach (var it in Rewards)
+            {
+                if (it.RewardType == CapsuleRewardType.PEN)
+                {
+                    plr.PEN += it.PEN;
+                }
+                else
+                {
+                    if (it.PeriodType == ItemPeriodType.None)
+                    {
+                        plr.Inventory.Create(it.ItemNumber, it.PriceType, it.PeriodType, (ushort)it.Period, 0, it.Effect, 1);
+                    }
+                    else
+                    {
+                        var prev = plr.Inventory
+                            .FirstOrDefault(p => p.ItemNumber == it.ItemNumber
+                            && p.PeriodType == it.PeriodType
+                            && p.PriceType == it.PriceType);
+
+                        if (prev == null || prev.ItemNumber == 0)
+                        {
+                            plr.Inventory.Create(it.ItemNumber, it.PriceType, it.PeriodType, (ushort)it.Period, 0, it.Effect, 1);
+                        }
+                        else
+                        {
+                            if (it.PeriodType == ItemPeriodType.Units)
+                                prev.Count += it.Period;
+                            else
+                                prev.Period += (ushort)it.Period;
+
+                            session.SendAsync(new SInventoryActionAckMessage(InventoryAction.Update, prev.Map<PlayerItem, ItemDto>()));
+                        }
+                    }
+                }
+            }
+
+            session.SendAsync(new SUseCapsuleAckMessage(Rewards, 3));
+            session.SendAsync(new SRefreshCashInfoAckMessage(plr.PEN, plr.AP));
         }
     }
 }

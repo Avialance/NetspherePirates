@@ -91,22 +91,22 @@ namespace Netsphere.Game.GameRules
                     if (_captainHelper.Any())
                         SubRoundEnd();
                 }
-            }
 
-            if (_waitingNextRoom)
-            {
-                _nextRoundTime += delta;
-                if (_nextRoundTime >= s_captainNextroundTime)
+                if (_waitingNextRoom)
                 {
-                    _captainHelper.Reset();
-                    _waitingNextRoom = false;
+                    _nextRoundTime += delta;
+                    if (_nextRoundTime >= s_captainNextroundTime)
+                    {
+                        _captainHelper.Reset();
+                        _waitingNextRoom = false;
+                    }
                 }
-            }
-            else
-            {
-                _subRoundTime += delta;
-                if (_subRoundTime >= s_captainRoundTime)
-                    SubRoundEnd();
+                else
+                {
+                    _subRoundTime += delta;
+                    if (_subRoundTime >= s_captainRoundTime)
+                        SubRoundEnd();
+                }
             }
         }
 
@@ -257,6 +257,13 @@ namespace Netsphere.Game.GameRules
         public CaptainHelper(Room room)
         {
             Room = room;
+            _alpha = from plr in this.Room.TeamManager.PlayersPlaying
+                     where plr.RoomInfo.Team.Team == Team.Alpha
+                     select plr;
+
+            _beta = from plr in this.Room.TeamManager.PlayersPlaying
+                    where plr.RoomInfo.Team.Team == Team.Beta
+                    select plr;
         }
 
         public void Reset()

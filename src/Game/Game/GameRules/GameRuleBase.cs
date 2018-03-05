@@ -26,6 +26,8 @@ namespace Netsphere.Game.GameRules
         protected GameRuleBase(Room room)
         {
             Room = room;
+            Room.PlayerJoined += PlayerJoined;
+            Room.PlayerJoining += PlayerJoining;
             Room.PlayerLeft += PlayerLeft;
             StateMachine = new StateMachine<GameRuleState, GameRuleStateTrigger>(GameRuleState.Waiting);
             StateMachine.OnTransitioned(StateMachine_OnTransition);
@@ -38,6 +40,12 @@ namespace Netsphere.Game.GameRules
         { }
 
         public virtual void Reload()
+        { }
+
+        public virtual void PlayerJoining(object room, RoomPlayerEventArgs e)
+        { }
+
+        public virtual void PlayerJoined(object room, RoomPlayerEventArgs e)
         { }
 
         public virtual void PlayerLeft(object room, RoomPlayerEventArgs e)
@@ -203,18 +211,40 @@ namespace Netsphere.Game.GameRules
                     {
                         foreach (var @char in plr.CharacterManager)
                         {
+                            var sec = plr.RoomInfo.CharacterPlayTime[@char.Slot];
                             var loss = (int)plr.RoomInfo.CharacterPlayTime[@char.Slot].TotalMinutes *
                                        Config.Instance.Game.DurabilityLossPerMinute;
                             loss += (int)plr.RoomInfo.Stats.Deaths * Config.Instance.Game.DurabilityLossPerDeath;
 
                             foreach (var item in @char.Weapons.GetItems().Where(item => item != null && item.Durability != -1))
+                            {
                                 item.LoseDurabilityAsync(loss).Wait();
+                                if (item.PeriodType == ItemPeriodType.Hours)
+                                {
+                                    item.PlayTime += sec;
+                                    plr.Inventory.Update(item);
+                                }
+                            }
 
                             foreach (var item in @char.Costumes.GetItems().Where(item => item != null && item.Durability != -1))
+                            {
                                 item.LoseDurabilityAsync(loss).Wait();
+                                if (item.PeriodType == ItemPeriodType.Hours)
+                                {
+                                    item.PlayTime += sec;
+                                    plr.Inventory.Update(item);
+                                }
+                            }
 
                             foreach (var item in @char.Skills.GetItems().Where(item => item != null && item.Durability != -1))
+                            {
                                 item.LoseDurabilityAsync(loss).Wait();
+                                if (item.PeriodType == ItemPeriodType.Hours)
+                                {
+                                    item.PlayTime += sec;
+                                    plr.Inventory.Update(item);
+                                }
+                            }
                         }
                     }
 

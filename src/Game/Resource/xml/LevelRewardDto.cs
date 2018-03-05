@@ -6,6 +6,7 @@ using System.Xml.Serialization;
 namespace Netsphere.Resource.xml
 {
     [XmlType(AnonymousType = true)]
+    [XmlRoot(Namespace = "", IsNullable = false, ElementName = "LevelReward")]
     public class LevelRewardDto
     {
         [XmlElement("level")]

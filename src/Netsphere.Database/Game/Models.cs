@@ -173,12 +173,14 @@ namespace Netsphere.Database.Game
         [ForeignKey(nameof(Player))]
         public int PlayerId { get; set; }
         public PlayerDto Player { get; set; }
-        
+
         public int ShopItemInfoId { get; set; }
         public int ShopPriceId { get; set; }
+        public ushort Period { get; set; }
         public uint Effect { get; set; }
         public byte Color { get; set; }
         public long PurchaseDate { get; set; }
+        public long PlayTime { get; set; }
         public int Durability { get; set; }
         public int Count { get; set; }
     }

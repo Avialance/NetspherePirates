@@ -291,11 +291,12 @@ namespace Netsphere.Network
             Mapper.Register<PlayerItem, ItemDto>()
                 .Member(dest => dest.Refund, src => src.CalculateRefund())
                 .Member(dest => dest.PurchaseTime, src => src.PurchaseDate.ToUnixTimeSeconds())
-                .Member(dest => dest.ExpireTime,
-                    src => src.ExpireDate == DateTimeOffset.MinValue ? -1 : src.ExpireDate.ToUnixTimeSeconds())
+                .Member(dest => dest.ExpireTime, src => src.ExpireDate)
+                .Member(dest => dest.Quantity, src => src.Count)
 
                 // ToDo
-                .Value(dest => dest.TimeLeft, 0)
+                //.Member(dest => dest.TimeLeft, src => (src.ExpireDate - src.PurchaseDate).TotalSeconds)
+                //.Value(dest => dest.TimeLeft, 0)
                 .Value(dest => dest.Unk1, (uint)0)
                 .Value(dest => dest.Unk2, 0)
                 .Value(dest => dest.Unk3, 0)

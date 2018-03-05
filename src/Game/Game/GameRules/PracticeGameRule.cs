@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using Netsphere.Network.Data.GameRule;
+using Netsphere.Network.Message.GameRule;
 using Serilog;
 using Serilog.Core;
 
@@ -56,6 +59,12 @@ namespace Netsphere.Game.GameRules
             base.Update(delta);
         }
 
+        public override void Cleanup()
+        {
+            Room.TeamManager.Remove(Team.Alpha);
+            base.Cleanup();
+        }
+
         public override PlayerRecord GetPlayerRecord(Player plr)
         {
             return new PracticeRecord(plr);
@@ -63,16 +72,9 @@ namespace Netsphere.Game.GameRules
 
         public override void OnScoreKill(Player killer, Player assist, Player target, AttackAttribute attackAttribute)
         {
-            //killer.RoomInfo.Team.Score++;
             GetRecord(killer).Kills++;
-            base.OnScoreKill(killer, null, null, attackAttribute);
-            //Logger.Debug("Kill");
-        }
 
-        public override void OnScoreSuicide(Player plr)
-        {
-            base.OnScoreSuicide(plr);
-            Logger.Debug("Suicide");
+            base.OnScoreKill(killer, null, target, attackAttribute);
         }
 
         private static PracticeRecord GetRecord(Player plr)
@@ -89,11 +91,56 @@ namespace Netsphere.Game.GameRules
     internal class PracticeRecord : PlayerRecord
     {
         public override uint TotalScore => Kills;
+        public uint Unk1 { get; set; }
+        public uint Unk2 { get; set; }
+        public uint Unk3 { get; set; }
+        public uint Unk4 { get; set; }
+        public uint Unk5 { get; set; }
+        public uint Unk6 { get; set; }
+        public uint Unk7 { get; set; }
+        public uint Unk8 { get; set; }
 
         public PracticeRecord(Player plr)
             : base(plr)
         {
+            Unk1 = 1;
+            Unk2 = 2;
+            Unk3 = 3;
+            Unk4 = 4;
+            Unk5 = 5;
+            Unk6 = 6;
+            Unk7 = 7;
+            Unk8 = 8;
+        }
 
+        public override void Serialize(BinaryWriter w, bool isResult)
+        {
+            base.Serialize(w, isResult);
+
+            w.Write(Unk1);
+            w.Write(Unk2);
+            w.Write(Unk3);
+            w.Write(Unk4);
+            w.Write(Unk5);
+            w.Write(Unk6);
+            w.Write(Unk7);
+            w.Write(Unk8);
+            w.Write(Unk1);
+            w.Write(Unk2);
+            w.Write(Unk3);
+            w.Write(Unk4);
+            w.Write(Unk5);
+            w.Write(Unk6);
+            w.Write(Unk7);
+            w.Write(Unk8);
+            w.Write(Unk1);
+            w.Write(Unk2);
+            w.Write(Unk3);
+            w.Write(Unk4);
+            w.Write(Unk5);
+            w.Write(Unk6);
+            w.Write(Unk7);
+            w.Write(Unk8);
         }
     }
 }

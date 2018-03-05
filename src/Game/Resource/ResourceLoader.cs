@@ -303,6 +303,46 @@ namespace Netsphere.Resource
             }
         }
 
+        public IEnumerable<CapsuleReward> LoadItemRewards()
+        {
+            var dto = Deserialize<ItemRewardDto>("xml/ItemBag.xml");
+
+            foreach (var it in dto.Items)
+            {
+                var ret = new CapsuleReward { Item = it.Number, Bags = new List<BagReward>() };
+
+                foreach (var group in it.Groups)
+                {
+                    var bag = new BagReward
+                    {
+                        Bag = new List<ItemReward>()
+                    };
+
+                    foreach (var rw in group.Rewards)
+                    {
+                        var PEN = (CapsuleRewardType)rw.Type == CapsuleRewardType.PEN ? rw.Value : 0;
+                        var Period = (CapsuleRewardType)rw.Type == CapsuleRewardType.PEN ? 0 : rw.Value;
+
+                        bag.Bag.Add(new ItemReward
+                        {
+                            Type = (CapsuleRewardType)rw.Type,
+                            Item = rw.Data,
+                            PriceType = (ItemPriceType)rw.PriceType,
+                            PeriodType = (ItemPeriodType)rw.PeriodType,
+                            Period = Period,
+                            PEN = PEN,
+                            Effect = rw.Effect,
+                            Rate = rw.Rate
+                        });
+                    }
+
+                    ret.Bags.Add(bag);
+                }
+
+                yield return ret;
+            }
+        }
+
         #region DefaultItems
 
         public IEnumerable<DefaultItem> LoadDefaultItems()

@@ -11,6 +11,7 @@ namespace Netsphere.Resource
         Maps,
         GameTempo,
         Tasks,
-        LevelRewards
+        LevelRewards,
+        ItemRewards
     }
 }

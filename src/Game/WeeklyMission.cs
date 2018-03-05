@@ -33,6 +33,7 @@ namespace Netsphere
             int _wMissions;
             Player = plr;
             _tasksR = new Dictionary<uint, PlayerMissionsDto>();
+            _taskOnGoing = new Dictionary<uint, ushort>();
 
             var TaskList = GameServer.Instance.ResourceCache.GetTasks();
 
@@ -320,8 +321,9 @@ namespace Netsphere
 
         public void Save(IDbConnection db)
         {
-            foreach (var task in _tasksR)
+            foreach (var taskKPV in _tasksR)
             {
+                var task = taskKPV.Value;
                 if (task.Id == 0)
                 {
                     db.Insert(task);
