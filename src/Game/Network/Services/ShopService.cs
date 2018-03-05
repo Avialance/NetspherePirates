@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using BlubLib.DotNetty.Handlers.MessageHandling;
@@ -306,31 +308,79 @@ namespace Netsphere.Network.Services
         public void RandomShopRollHandler(GameSession session, CRandomShopRollingStartReqMessage message)
         {
             var shop = GameServer.Instance.ResourceCache.GetShop();
+            var itemList = shop.Items;
+            var effectList = shop.Effects;
+            var plr = session.Player;
+            var rand = new Random();
+            Shop.ShopItem item = null;
+
+            var PEN = message.IsWeapon ? 3000 : 800;
+            var rnd = plr.RandomShop[message.IsWeapon ? 1 : 0];
+
+            if (plr.PEN < PEN)
+            {
+                session.SendAsync(new SRandomShopItemInfoAckMessage
+                {
+                    Item = new RandomShopItemDto()
+                });
+            }
+
+            plr.PEN -= (uint)PEN;
+
+            session.SendAsync(new SRefreshCashInfoAckMessage { PEN = plr.PEN, AP = plr.AP });
+
+        roll:
+            if (message.StopItem == 0)
+            {
+                var bag = new List<Shop.ShopItem>();
+                ItemCategory cat;
+
+                if (message.IsWeapon)
+                    cat = ItemCategory.Weapon;
+                else
+                    cat = ItemCategory.Costume;
+
+                bag = (from it in itemList
+                        where it.Value.ItemNumber.Category == cat
+                        select it.Value).ToList();
+
+                item = bag.ElementAt(rand.Next(bag.Count));
+                rnd.Item = item.ItemNumber;
+            }
+            else
+            {
+                item = itemList[rnd.Item];
+            }
+
+            var infos = item.ItemInfos.ElementAtOrDefault(rand.Next(item.ItemInfos.Count));
+            if (infos == null)
+                goto roll;
+
+            var prices = infos.PriceGroup.Prices;
+            var price = prices.ElementAt(rand.Next(prices.Count));
+
+            if (message.StopEffect == 0)
+            {
+                var effects = infos.EffectGroup.Effects;
+                var effect = effects.ElementAt(rand.Next(effects.Count));
+                rnd.Effect = effect.Effect;
+            }
+
+            rnd.PriceType = infos.PriceGroup.PriceType;
+            rnd.PeriodType = price.PeriodType;
+            rnd.Period = price.Period;
 
             session.SendAsync(new SRandomShopItemInfoAckMessage
             {
                 Item = new RandomShopItemDto
                 {
-                    Unk1 = 2010001,
-                    Unk2 = 1,
-                    Unk3 = 2,
-                    Unk4 = 3,
-                    Unk5 = 4,
-                    Unk6 = 6
+                    Unk1 = (uint)(message.IsWeapon ? 1 : 0),
+                    ItemNumber = rnd.Item,
+                    Effect = rnd.Effect,
+                    PeriodType = rnd.PeriodType,
+                    Period = rnd.Period
                 }
             });
-            //session.Send(new SRandomShopItemInfoAckMessage
-            //{
-            //    Item = new RandomShopItemDto
-            //    {
-            //        Unk1 = 2000001,
-            //        Value = 2000001,
-            //        CurrentWeapon = 2000001,
-            //        Unk4 = 2000001,
-            //        Unk5 = 2000001,
-            //        Unk6 = 0,
-            //    }
-            //});
         }
 
         [MessageHandler(typeof(CRandomShopItemSaleReqMessage))]
@@ -340,7 +390,26 @@ namespace Netsphere.Network.Services
 
             session.SendAsync(new SRandomShopItemInfoAckMessage
             {
-                Item = new RandomShopItemDto()
+                Item = new RandomShopItemDto
+                {
+                    Unk1 = message.Unk
+                }
+            });
+        }
+
+        [MessageHandler(typeof(CRandomShopItemGetReqMessage))]
+        public void RandomShopItemGet(GameSession session, CRandomShopItemGetReqMessage message)
+        {
+            var plr = session.Player;
+            var rnd = plr.RandomShop[message.Unk];
+            plr.Inventory.Create(rnd.Item, rnd.PriceType, rnd.PeriodType, rnd.Period, (byte)rnd.color, rnd.Effect, 0);
+
+            session.SendAsync(new SRandomShopItemInfoAckMessage
+            {
+                Item = new RandomShopItemDto
+                {
+                    Unk1 = message.Unk
+                }
             });
         }
     }

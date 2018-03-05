@@ -44,6 +44,7 @@ namespace Netsphere
         public LicenseManager LicenseManager { get; }
         public CharacterManager CharacterManager { get; }
         public Inventory Inventory { get; }
+        public RandomShopInfo[] RandomShop { get; set; }
         public Channel Channel { get; internal set; }
 
         public Room Room { get; internal set; }
@@ -168,6 +169,8 @@ namespace Netsphere
             CaptainMode = new CPTStats(this, dto);
 
             Mission = new WeeklyMission(this, dto);
+
+            RandomShop = new RandomShopInfo[2];
         }
 
         /// <summary>
@@ -745,5 +748,20 @@ namespace Netsphere
                 CaptainKilled = (uint)CPTCount
             };
         }
+    }
+
+    internal class RandomShopInfo
+    {
+        public ItemNumber Item { get; set; }
+
+        public uint color { get; set; }
+
+        public ItemPriceType PriceType { get; set; }
+
+        public ItemPeriodType PeriodType { get; set; }
+
+        public ushort Period { get; set; }
+
+        public uint Effect { get; set; }
     }
 }

@@ -287,16 +287,16 @@ namespace Netsphere.Network.Message.Game
         public bool IsWeapon { get; set; }
 
         [BlubMember(1)]
-        public byte Unk2 { get; set; }
+        public byte RollMode { get; set; }
 
         [BlubMember(2)]
-        public byte Unk3 { get; set; }
+        public byte StopItem { get; set; }
 
         [BlubMember(3)]
-        public byte Unk4 { get; set; }
+        public byte StopColor { get; set; }
 
         [BlubMember(4)]
-        public byte Unk5 { get; set; }
+        public byte StopEffect { get; set; }
 
         [BlubMember(5)]
         public uint Unk6 { get; set; }
