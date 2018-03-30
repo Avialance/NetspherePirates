@@ -9,6 +9,9 @@ using ProudNet.Handlers;
 using Serilog;
 using Serilog.Core;
 using ExpressMapper.Extensions;
+using Netsphere.Database.Auth;
+using Netsphere.Database;
+using Dapper.FastCrud;
 
 namespace Netsphere.Network.Services
 {
@@ -226,7 +229,8 @@ namespace Netsphere.Network.Services
                         var prev = plr.Inventory
                             .FirstOrDefault(p => p.ItemNumber == it.ItemNumber
                             && p.PeriodType == it.PeriodType
-                            && p.PriceType == it.PriceType);
+                            && p.PriceType == it.PriceType
+                            && p.Effect == it.Effect);
 
                         if (prev == null || prev.ItemNumber == 0)
                         {
@@ -247,6 +251,88 @@ namespace Netsphere.Network.Services
 
             session.SendAsync(new SUseCapsuleAckMessage(Rewards, 3));
             session.SendAsync(new SRefreshCashInfoAckMessage(plr.PEN, plr.AP));
+        }
+
+        [MessageHandler(typeof(CUseChangeNickNameItemReqMessage))]
+        public void UseChangeNickNameItem(GameSession session, CUseChangeNickNameItemReqMessage message)
+        {
+            var plr = session.Player;
+            var item = plr.Inventory[message.ItemId];
+
+            var nickname = new NicknameHistoryDto
+            {
+                AccountId = (int)plr.Account.Id,
+                Nickname = message.Nickname
+            };
+
+            switch (item.ItemNumber)
+            {
+                case 4000001: // Permanent NickName Change
+                    nickname.ExpireDate = null;
+                    break;
+                case 4000002: // Remove NickName Change
+                    session.SendAsync(new SServerResultInfoAckMessage(ServerResult.FailedToRequestTask));
+                    break;
+                case 4000003: // 1 Day Nickname Change
+                    nickname.ExpireDate = DateTimeOffset.Now.AddDays(1).ToUnixTimeSeconds();
+                    break;
+                case 4000004: // 7 Day NickName Change
+                    nickname.ExpireDate = DateTimeOffset.Now.AddDays(7).ToUnixTimeSeconds();
+                    break;
+                case 4000005: // 30 Day NickName Change
+                    nickname.ExpireDate = DateTimeOffset.Now.AddDays(30).ToUnixTimeSeconds();
+                    break;
+                default:
+                    session.SendAsync(new SServerResultInfoAckMessage(ServerResult.FailedToRequestTask));
+                    return;
+            }
+
+            using (var auth = AuthDatabase.Open())
+            {
+                auth.Insert(nickname);
+            }
+
+            plr.Inventory.Remove(item);
+
+            session.SendAsync(new SUseChangeNickItemAckMessage
+            {
+                Result = 0,
+                Unk2 = 0,
+                Unk3 = message.Nickname
+             });
+        }
+
+        [MessageHandler(typeof(CUseResetRecordItemReqMessage))]
+        public void CUseResetRecordItem(GameSession session, CUseResetRecordItemReqMessage message)
+        {
+            var plr = session.Player;
+            var item = plr.Inventory[message.ItemId];
+
+            plr.DeathMatch.Deaths = 0;
+            plr.DeathMatch.KillAssists = 0;
+            plr.DeathMatch.Kills = 0;
+
+            plr.Inventory.Remove(item);
+
+            session.SendAsync(new SUseResetRecordItemAckMessage
+            {
+                Result = 0,
+                Unk2 = 0
+            });
+        }
+
+        [MessageHandler(typeof(CUseCoinFillingItemReqMessage))]
+        public void CUseCoinFillingItem(GameSession session, CUseCoinFillingItemReqMessage message)
+        {
+            var plr = session.Player;
+            var item = plr.Inventory[message.ItemId];
+
+            session.SendAsync(new SUseCoinFillingItemAckMessage
+            {
+                Result = 0
+            });
+
+            plr.Inventory.Remove(item);
         }
     }
 }

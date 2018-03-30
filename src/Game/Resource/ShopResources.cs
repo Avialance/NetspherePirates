@@ -7,14 +7,18 @@ using Netsphere.Shop;
 
 namespace Netsphere.Resource
 {
-    internal class     ShopResources
+    internal class ShopResources
     {
         private Dictionary<ItemNumber, ShopItem> _items;
+        //private Dictionary<ItemNumber, ShopItem> _selling;
+        private List<ShopItemInfo> _random;
         private Dictionary<int, ShopEffectGroup> _effects;
         private Dictionary<int, ShopPriceGroup> _prices;
         private Dictionary<ItemLicense, LicenseReward> _licenses;
 
         public IReadOnlyDictionary<ItemNumber, ShopItem> Items => _items;
+        //public IReadOnlyDictionary<ItemNumber, ShopItem> Shop => _selling;
+        public IReadOnlyList<ShopItemInfo> RandomShop => _random;
 
         public IReadOnlyDictionary<int, ShopEffectGroup> Effects => _effects;
 
@@ -40,11 +44,19 @@ namespace Netsphere.Resource
                     .Select(dto => new ShopPriceGroup(dto))
                     .ToDictionary(x => x.Id);
 
-                _items = db.Find<ShopItemDto>(statement => statement
+                var itemdb = db.Find<ShopItemDto>(statement => statement
                         .Include<ShopItemInfoDto>(join => join.LeftOuterJoin()))
-                    .ToArray()
+                    .ToArray();
+
+                _items = itemdb
                     .Select(dto => new ShopItem(dto, this))
                     .ToDictionary(x => x.ItemNumber);
+
+                _random = (from dto in itemdb
+                           from sdto in dto.ItemInfos
+                           where sdto.IsRandom
+                            select _items[dto.Id].ItemInfos.FirstOrDefault(ii => ii.Id == sdto.Id))
+                           .ToList();
 
                 _licenses = db.Find<LicenseRewardDto>()
                     .ToArray()

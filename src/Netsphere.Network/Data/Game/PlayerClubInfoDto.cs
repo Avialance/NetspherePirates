@@ -31,7 +31,7 @@ namespace Netsphere.Network.Data.Game
         public string Unk8 { get; set; }
 
         [BlubMember(8, typeof(StringSerializer))]
-        public string Unk9 { get; set; } // Clan name?
+        public string ClanName { get; set; } // Clan name?
 
         [BlubMember(9, typeof(StringSerializer))]
         public string ModeratorName { get; set; }
@@ -43,17 +43,17 @@ namespace Netsphere.Network.Data.Game
         public string Unk12 { get; set; }
 
         [BlubMember(12, typeof(StringSerializer))]
-        public string Unk13 { get; set; }
+        public string ClanMark { get; set; }
 
         public PlayerClubInfoDto()
         {
             Unk7 = "";
             Unk8 = "";
-            Unk9 = "";
+            ClanName = "";
             ModeratorName = "";
             Unk11 = "";
             Unk12 = "";
-            Unk13 = "";
+            ClanMark = "";
         }
     }
 }

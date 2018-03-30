@@ -226,7 +226,10 @@ namespace Netsphere.Network.Services
             var result = string.IsNullOrWhiteSpace(account.Nickname)
                 ? GameLoginResult.ChooseNickname
                 : GameLoginResult.OK;
-            await session.SendAsync(new SLoginAckMessage(result, session.Player.Account.Id));
+            await session.SendAsync(new SLoginAckMessage(result, session.Player.Account.Id)
+            {
+                Unk = 1000,
+            });
 
             if (!string.IsNullOrWhiteSpace(account.Nickname))
                 await LoginAsync(session);
@@ -235,7 +238,7 @@ namespace Netsphere.Network.Services
         [MessageHandler(typeof(CCheckNickReqMessage))]
         public async Task CheckNickHandler(GameSession session, CCheckNickReqMessage message)
         {
-            if (session.Player == null || !string.IsNullOrWhiteSpace(session.Player.Account.Nickname))
+            if (session.Player == null /*|| !string.IsNullOrWhiteSpace(session.Player.Account.Nickname)*/)
             {
                 session.CloseAsync();
                 return;
@@ -354,6 +357,8 @@ namespace Netsphere.Network.Services
             await session.SendAsync(new SServerResultInfoAckMessage(ServerResult.WelcomeToS4World));
             await session.SendAsync(new SBeginAccountInfoAckMessage
             {
+                Unk1 = (byte)(plr.Account.SecurityLevel>SecurityLevel.User ? 1 : 0),
+                Unk2 = 1000,
                 Level = plr.Level,
                 TotalExp = plr.TotalExperience,
                 AP = plr.AP,
@@ -364,11 +369,20 @@ namespace Netsphere.Network.Services
                 TDStats = plr.TouchDown.GetStatsDto(),
                 ChaserStats = plr.Chasser.GetStatsDto(),
                 BRStats = plr.BattleRoyal.GetStatsDto(),
-                CPTStats = plr.CaptainMode.GetStatsDto()
+                CPTStats = plr.CaptainMode.GetStatsDto(),
+                Unk3 = 1,
+                Unk4 = 1000,
+                Unk5 = 1000,
+                Unk6 = 1000,
+                Unk7 = 1000
             });
 
             await session.SendAsync(new STaskInfoAckMessage { Tasks = plr.Mission.GetTasks() });
             await session.SendAsync(new SServerResultInfoAckMessage(ServerResult.WelcomeToS4World2));
+
+            var club = Club.Instance.ClubInfo(plr);
+            if (club != null)
+                await session.SendAsync(new SClubInfoAckMessage { ClubInfo = club });
 
             if (plr.Inventory.Count == 0)
             {

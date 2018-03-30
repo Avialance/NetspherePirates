@@ -1,4 +1,5 @@
 ﻿using BlubLib.DotNetty.Handlers.MessageHandling;
+using Netsphere.Network.Data.Game;
 using Netsphere.Network.Message.Game;
 using ProudNet.Handlers;
 using Serilog;
@@ -15,30 +16,89 @@ namespace Netsphere.Network.Services
         public void CClubAddressReq(GameSession session, CClubAddressReqMessage message)
         {
             Logger.ForAccount(session)
-                .Debug("ClubAddressReq: {message}", message);
+                .Debug($"ClubAddressReq: {message.RequestId} {message.LanguageId} {message.Command}");
 
             session.SendAsync(new SClubAddressAckMessage("Kappa", 123));
         }
 
         [MessageHandler(typeof(CClubInfoReqMessage))]
-        public void CClubInfoReq()
+        public void CClubInfoReq(GameSession session)
         {
-            //session.Send(new SClubInfoAckMessage(new PlayerClubInfoDto
-            //{
-            //    Unk1 = 0,
-            //    Unk2 = 0,
-            //    Unk3 = 0,
-            //    Unk4 = 0,
-            //    Unk5 = 0,
-            //    Unk6 = 0,
-            //    Unk7 = "",
-            //    Unk8 = "",
-            //    Unk9 = "Name?",
-            //    ModeratorName = "Moderator",
-            //    Unk11 = "",
-            //    Unk12 = "",
-            //    Unk13 = "",
-            //}));
+            Logger.ForAccount(session)
+                .Debug("CClubInfoReq");
+            session.SendAsync(new SClubInfoAckMessage
+            {
+                ClubInfo = Club.Instance.ClubInfo(session.Player)
+            });
+        }
+
+        [MessageHandler(typeof(CClubHistoryReqMessage))]
+        public void CClubHistoryReq(GameSession session)
+        {
+            session.SendAsync(new SClubHistoryAckMessage
+            {
+                History = new ClubHistoryDto
+                {
+                    Unk1 = 1,
+                    Unk2 = 2,
+                    Unk3 = "aaaaa",
+                    Unk4 = "bbbbb",
+                    Unk5 = "ccccc",
+                    Unk6 = "ddddd",
+                    Unk7 = "eeeee",
+                    Unk8 = "fffff"
+                }
+            });
+        }
+
+        [MessageHandler(typeof(CClubJoinReqMessage))]
+        public void CClubJoinReq(GameSession session, CClubJoinReqMessage message)
+        { }
+
+        [MessageHandler(typeof(CClubNoticeChangeReqMessage))]
+        public void CClubNoticeChangeReq(GameSession session, CClubNoticeChangeReqMessage message)
+        { }
+
+        [MessageHandler(typeof(CClubUnJoinReqMessage))]
+        public void CClubUnJoinReq(GameSession session, CClubUnJoinReqMessage message)
+        { }
+
+        [MessageHandler(typeof(CGetClubInfoByNameReqMessage))]
+        public void CGetClubInfoByNameReq(GameSession session, CGetClubInfoByNameReqMessage message)
+        {
+            session.SendAsync(new SGetClubInfoAckMessage
+            {
+                ClubInfo = new ClubInfoDto
+                {
+                    Unk1 = "aaaa",
+                    Unk2 = "bbbb",
+                    Unk3 = "cccc",
+                    Unk4 = "dddd",
+                    Unk5 = "ffff",
+                    Unk6 = 6,
+                    Unk7 = 7,
+                    Unk8 = 8
+                }
+            });
+        }
+
+        [MessageHandler(typeof(CGetClubInfoReqMessage))]
+        public void CGetClubInfoReq(GameSession session, CGetClubInfoReqMessage message)
+        {
+            session.SendAsync(new SGetClubInfoAckMessage
+            {
+                ClubInfo = new ClubInfoDto
+                {
+                    Unk1 = "aaaa",
+                    Unk2 = "bbbb",
+                    Unk3 = "cccc",
+                    Unk4 = "dddd",
+                    Unk5 = "ffff",
+                    Unk6 = 6,
+                    Unk7 = 7,
+                    Unk8 = 8
+                }
+            });
         }
     }
 }

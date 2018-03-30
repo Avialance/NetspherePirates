@@ -34,7 +34,12 @@ namespace Netsphere
             Player = plr;
 
             foreach (var item in dto.Items.Select(i => new PlayerItem(this, i)))
-                _items.TryAdd(item.Id, item);
+            {
+                if (item.ExpireDate != 0 && item.TimeLeft > 0)
+                    _items.TryAdd(item.Id, item);
+                else
+                    _itemsToDelete.Push(item);
+            }
         }
 
         /// <summary>
@@ -112,17 +117,19 @@ namespace Netsphere
         {
             if (Player.Room == null)
             {
-                var ExpireItems = from it in _items
-                                  where it.Value.TimeLeft <= 0
-                                  select it.Value;
+                var ExpireItems = (from it in _items
+                                  where it.Value.TimeLeft == 0 || it.Value.ExpireDate == 0
+                                  select it.Value).ToList();
+
+                foreach (var it in ExpireItems)
+                    Remove(it);
             }
 
             if (!_itemsToDelete.IsEmpty)
             {
                 var idsToRemove = new StringBuilder();
                 var firstRun = true;
-                PlayerItem itemToDelete;
-                while (_itemsToDelete.TryPop(out itemToDelete))
+                while (_itemsToDelete.TryPop(out var itemToDelete))
                 {
                     if (firstRun)
                         firstRun = false;

@@ -48,4 +48,53 @@ namespace Netsphere.Resource.xml
             return key;
         }
     }
+
+    [XmlType(AnonymousType = true)]
+    [XmlRoot(Namespace = "", IsNullable = false, ElementName = "string_table")]
+    public class TaskStringTableDto
+    {
+        [XmlElement("string")]
+        public TaskStringDto[] @string { get; set; }
+    }
+
+    [XmlType(AnonymousType = true)]
+    public class TaskStringDto
+    {
+        [XmlAttribute]
+        public string key { get; set; }
+
+        [XmlElement]
+        public TaskSStringDto kor { get; set; }
+
+        [XmlElement]
+        public TaskSStringDto ger { get; set; }
+
+        [XmlElement]
+        public TaskSStringDto eng { get; set; }
+
+        [XmlElement]
+        public TaskSStringDto fre { get; set; }
+
+        [XmlElement]
+        public TaskSStringDto spa { get; set; }
+
+        [XmlElement]
+        public TaskSStringDto ita { get; set; }
+
+        [XmlElement]
+        public TaskSStringDto rus { get; set; }
+
+        [XmlElement]
+        public TaskSStringDto ame { get; set; }
+
+        [XmlElement]
+        public TaskSStringDto cns { get; set; }
+    }
+
+    [XmlType(AnonymousType = true)]
+    public class TaskSStringDto
+    {
+        [XmlAttribute]
+        public string value { get; set; }
+    }
 }

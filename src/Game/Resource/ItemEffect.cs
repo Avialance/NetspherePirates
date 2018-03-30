@@ -6,6 +6,7 @@ namespace Netsphere.Resource
     {
         public uint Id { get; set; }
         public string Name { get; set; }
+        public uint Pumbi_star { get; set; }
         public IList<ItemEffectAttribute> Attributes { get; set; }
 
         public ItemEffect()

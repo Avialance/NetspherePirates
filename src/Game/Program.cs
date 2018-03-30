@@ -71,6 +71,7 @@ namespace Netsphere
             CharacterIdGenerator.Initialize();
             LicenseIdGenerator.Initialize();
             DenyIdGenerator.Initialize();
+            Club.Initialize();
 
             var listenerThreads = new MultithreadEventLoopGroup(Config.Instance.ListenerThreads);
             var workerThreads = new MultithreadEventLoopGroup(Config.Instance.WorkerThreads);

@@ -4,6 +4,30 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Netsphere.Database.Game
 {
+    [Table("club")]
+    public class ClubDto
+    {
+        [Key]
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public ulong Moderator { get; set; }
+        public string Notice { get; set; }
+        public int Won { get; set; }
+        public int Loss { get; set; }
+        public string Mark { get; set; }
+
+        public IList<ClubMembersDto> Members { get; set; } = new List<ClubMembersDto>();
+    }
+
+    [Table("club_members")]
+    public class ClubMembersDto
+    {
+        [Key]
+        public int Id { get; set; }
+        public int ClubId { get; set; }
+        public byte Authority { get; set; }
+    }
+
     [Table("license_rewards")]
     public class LicenseRewardDto
     {
@@ -347,6 +371,7 @@ namespace Netsphere.Database.Game
         public int EffectGroupId { get; set; }
         public byte DiscountPercentage { get; set; }
         public bool IsEnabled { get; set; }
+        public bool IsRandom { get; set; }
     }
 
     [Table("shop_version")]

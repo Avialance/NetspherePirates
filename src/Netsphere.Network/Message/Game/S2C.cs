@@ -1317,7 +1317,7 @@ namespace Netsphere.Network.Message.Game
         public string Fingerprint { get; set; }
 
         [BlubMember(1)]
-        public uint Unk2 { get; set; }
+        public uint Timestamp { get; set; }
 
         public SClubAddressAckMessage()
         {
@@ -1327,7 +1327,7 @@ namespace Netsphere.Network.Message.Game
         public SClubAddressAckMessage(string fingerprint, uint unk2)
         {
             Fingerprint = fingerprint;
-            Unk2 = unk2;
+            Timestamp = unk2;
         }
     }
 

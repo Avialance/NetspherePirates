@@ -32,18 +32,6 @@ namespace Netsphere.Network.Services
                 Date04 = version,
                 Unk = 0
             });
-            //session.Send(new SRandomShopInfoAckMessage
-            //{
-            //    Info = new RandomShopDto
-            //    {
-            //        ItemNumbers = new List<ItemNumber> { 2000001, 2000002, 2000003 },
-            //        Effects = new List<uint> { 0, 0, 0 },
-            //        Colors = new List<uint> { 2, 0, 0 },
-            //        PeriodTypes = new List<ItemPeriodType> { ItemPeriodType.Hours, ItemPeriodType.Hours, ItemPeriodType.Hours },
-            //        Periods = new List<ushort> { 2, 4, 10 },
-            //        Unk6 = 10000,
-            //    }
-            //});
 
             if (message.Date01 == version &&
                 message.Date02 == version &&
@@ -53,6 +41,27 @@ namespace Netsphere.Network.Services
                 return;
             }
 
+            var itemList = shop.RandomShop;
+            if (itemList.Count > 0)
+            {
+                var RSItemNumbers = itemList.Select(x => x.ShopItem.ItemNumber).ToArray();
+                var RSEffects = (from ef in GameServer.Instance.ResourceCache.GetEffects()
+                                 where ef.Value.Pumbi_star > 0
+                                 select ef.Value.Id).ToArray();
+
+                session.SendAsync(new SRandomShopInfoAckMessage
+                {
+                    Info = new RandomShopDto
+                    {
+                        ItemNumbers = RSItemNumbers,
+                        Effects = RSEffects,
+                        Colors = (new List<uint> { 0 }).ToArray(),
+                        PeriodTypes = (new List<ItemPeriodType> { ItemPeriodType.Hours }).ToArray(),
+                        Periods = (new List<ushort> { 1, 3, 5, 7, 10 }).ToArray(),
+                        Unk6 = 10000
+                    }
+                });
+            }
 
             #region NewShopPrice
 
@@ -308,13 +317,33 @@ namespace Netsphere.Network.Services
         public void RandomShopRollHandler(GameSession session, CRandomShopRollingStartReqMessage message)
         {
             var shop = GameServer.Instance.ResourceCache.GetShop();
-            var itemList = shop.Items;
+            var itemList = shop.RandomShop;
+
+            if (itemList.Count == 0)
+            {
+                session.SendAsync(new SRandomShopItemInfoAckMessage
+                {
+                    Item = new RandomShopItemDto
+                    {
+                        Unk1 = (uint)(message.IsWeapon ? 1 : 0),
+                        ItemNumber = 0,
+                        Effect = 0,
+                        PeriodType = 0,
+                        Period = 0
+                    }
+                });
+                return;
+            }
+
             var effectList = shop.Effects;
             var plr = session.Player;
             var rand = new Random();
-            Shop.ShopItem item = null;
+            Shop.ShopItemInfo item = null;
 
             var PEN = message.IsWeapon ? 3000 : 800;
+            if (plr.RandomShop[message.IsWeapon ? 1 : 0] == null)
+                plr.RandomShop[message.IsWeapon ? 1 : 0] = new RandomShopInfo();
+
             var rnd = plr.RandomShop[message.IsWeapon ? 1 : 0];
 
             if (plr.PEN < PEN)
@@ -332,7 +361,6 @@ namespace Netsphere.Network.Services
         roll:
             if (message.StopItem == 0)
             {
-                var bag = new List<Shop.ShopItem>();
                 ItemCategory cat;
 
                 if (message.IsWeapon)
@@ -340,33 +368,31 @@ namespace Netsphere.Network.Services
                 else
                     cat = ItemCategory.Costume;
 
-                bag = (from it in itemList
-                        where it.Value.ItemNumber.Category == cat
-                        select it.Value).ToList();
+                var bag = (from it in itemList
+                        where it.ShopItem.ItemNumber.Category == cat
+                        select it).ToList();
 
                 item = bag.ElementAt(rand.Next(bag.Count));
-                rnd.Item = item.ItemNumber;
+                rnd.Item = item.ShopItem.ItemNumber;
             }
             else
             {
-                item = itemList[rnd.Item];
+                item = itemList.FirstOrDefault( x => x.ShopItem.ItemNumber == rnd.Item );
             }
 
-            var infos = item.ItemInfos.ElementAtOrDefault(rand.Next(item.ItemInfos.Count));
-            if (infos == null)
+            if (item == null)
                 goto roll;
 
-            var prices = infos.PriceGroup.Prices;
+            var prices = item.PriceGroup.Prices;
             var price = prices.ElementAt(rand.Next(prices.Count));
 
             if (message.StopEffect == 0)
             {
-                var effects = infos.EffectGroup.Effects;
-                var effect = effects.ElementAt(rand.Next(effects.Count));
-                rnd.Effect = effect.Effect;
+                var effects = item.EffectGroup.Effects;
+                rnd.Effect = effects.ElementAt(rand.Next(effects.Count)).Effect;
             }
 
-            rnd.PriceType = infos.PriceGroup.PriceType;
+            rnd.PriceType = item.PriceGroup.PriceType;
             rnd.PeriodType = price.PeriodType;
             rnd.Period = price.Period;
 

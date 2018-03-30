@@ -177,6 +177,7 @@ namespace Netsphere.Resource
                 }
 
                 itemEffect.Name = name.eng;
+                itemEffect.Pumbi_star = itemEffectDto.pumbi_star;
                 yield return itemEffect;
             }
         }
@@ -184,18 +185,23 @@ namespace Netsphere.Resource
         public IEnumerable<TaskInfo> LoadTaskList()
         {
             var dto = Deserialize<TaskListDto>("xml/_eu_task_list.x7");
-            //var stringTable = Deserialize<StringTableDto>(dto.string_table/*"language/xml/item_effect_string_table.x7"*/);
+            var stringTable = Deserialize<TaskStringTableDto>(dto.string_table/*"language/xml/task_list_string_table.x7"*/);
 
             foreach (var task in dto.compulsory_task.base_setting)
             {
-                //var taskName = stringTable.@string.FirstOrDefault(s => s.key.Equals(task.name_key, StringComparison.InvariantCultureIgnoreCase));
-                //if (string.IsNullOrWhiteSpace(taskName.eng))
-                //{
-                //    Logger.Warning("Missing english translation for mision effect {textKey}", task.name_key);
-                //    taskName.eng = task.name;
-                //}
+                var tskName = stringTable.@string.FirstOrDefault(p => p.key.Equals(task.name_key, StringComparison.InvariantCultureIgnoreCase));
+                string taskName;
+                if (tskName.eng == null)
+                {
+                    Logger.Warning("Missing english translation for mision effect {textKey}", task.name_key);
+                    taskName = task.name;
+                }
+                else
+                {
+                    taskName = tskName.eng.value;
+                }
 
-                var Task = new TaskInfo(task.name_key, task.mode_type, task.category)
+                var Task = new TaskInfo(taskName, task.mode_type, task.category)
                 {
                     Id = (uint)task.level_setting.id,
                     Level = (uint)task.level_setting.level,
@@ -228,14 +234,19 @@ namespace Netsphere.Resource
 
             foreach (var task in dto.weekly_task.base_setting)
             {
-                //var taskName = stringTable.@string.FirstOrDefault(s => s.key.Equals(task.name_key, StringComparison.InvariantCultureIgnoreCase));
-                //if (string.IsNullOrWhiteSpace(taskName.eng))
-                //{
-                //    Logger.Warning("Missing english translation for mision effect {textKey}", task.name_key);
-                //    taskName.eng = task.name;
-                //}
+                var tskName = stringTable.@string.FirstOrDefault(p => p.key.Equals(task.name_key, StringComparison.InvariantCultureIgnoreCase));
+                string taskName;
+                if (tskName.eng == null)
+                {
+                    Logger.Warning("Missing english translation for mision effect {textKey}", task.name_key);
+                    taskName = task.name;
+                }
+                else
+                {
+                    taskName = tskName.eng.value;
+                }
 
-                var Task = new TaskInfo(task.name_key, task.mode_type, task.category)
+                var Task = new TaskInfo(taskName, task.mode_type, task.category)
                 {
                     Id = (uint)task.level_setting.id,
                     Level = (uint)task.level_setting.level,
