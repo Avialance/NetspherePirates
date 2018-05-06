@@ -398,20 +398,65 @@ namespace Netsphere.Network.Services
             room.Leave(targetPlr, message.Reason);
         }
 
+        [MessageHandler(typeof(CUseCoinReqMessage))]
+        public void CUseCoinReqMessageReq(GameSession session, CUseCoinReqMessage message)
+        {
+            var plr = session.Player;
+
+            var ack = new SUseCoinAckMessage();
+            var costList = new uint[] { 2, 1, 2, 2, 3, 3 };
+            var cost = costList[message.Type];
+
+            var BuffDuration = 300;
+
+            if (cost > plr.Coins2)
+            {
+                ack.Result = 1;
+                session.SendAsync(ack);
+                return;
+            }
+
+            switch (ack.Type = message.Type)
+            {
+                case 1: // Lucky EXP
+                    plr.RoomInfo.Stats.EXPLC = DateTimeOffset.Now.AddSeconds(BuffDuration).ToUnixTimeSeconds();
+                    break;
+                case 0: // Lucky PEN
+                    plr.RoomInfo.Stats.PENLC = DateTimeOffset.Now.AddSeconds(BuffDuration).ToUnixTimeSeconds();
+                    break;
+                case 2: // Respaw
+                case 3: // Target
+                    break;
+                case 4: // HP
+                case 5: // SP
+                    ack.Value = 5;
+                    break;
+            }
+
+            ack.Time = BuffDuration;
+            plr.Coins2 -= cost;
+            session.SendAsync(ack);
+        }
+
         #region Scores
 
         [MessageHandler(typeof(CSlaughterAttackPointReqMessage))]
         public void CSlaughterAttackPointReq(GameSession session, CSlaughterAttackPointReqMessage message)
         {
             var plr = session.Player;
+            var room = plr.Room;
+
             Logger.ForAccount(plr.Account).Information($"Charser Unk1 {message.Unk1}, unk2 {message.Unk2}");
+
+            if (room.Options.MatchKey.GameRule == GameRule.Chaser)
+                ((ChaserGameRule)room.GameRuleManager.GameRule).OnScoreAttack(plr, message.Unk1, message.Unk2);
 
             var resp = new SSlaughterAttackPointAckMessage {
                 AccountId = message.AccountId,
                 Unk1 = message.Unk1,
                 Unk2 = message.Unk2
             };
-            
+
             plr.Room.Broadcast(resp);
         }
 
@@ -611,10 +656,6 @@ namespace Netsphere.Network.Services
         [MessageHandler(typeof(CMissionScoreReqMessage))]
         public void CMissionScoreReq(GameSession session, CMissionScoreReqMessage message)
         {
-            Logger
-                .ForAccount(session.Player.Account)
-                .Debug($"MissionScore {message.Unk}");
-
             session.SendAsync(new SMissionScoreAckMessage { Unk1 = session.Player.Account.Id, Unk2 = message.Unk });
             session.SendAsync(new SMissionNotifyAckMessage { Unk = message.Unk });
         }
@@ -683,10 +724,17 @@ namespace Netsphere.Network.Services
         [MessageHandler(typeof(CArcadeStageSelectReqMessage))]
         public void CArcadeStageSelectReq(GameSession session, CArcadeStageSelectReqMessage message)
         {
-            Logger.ForAccount(session.Player.Account)
-                .Debug($"Arcade Stage Slect {message.Unk1} {message.Unk2}");
+            var plr = session.Player;
+            var room = plr.Room;
 
-            session.SendAsync(new SArcadeStageSelectAckMessage { Unk1 = message.Unk1, Unk2 = message.Unk2 });
+            if (room.Options.MatchKey.GameRule != GameRule.Arcade)
+                return;
+
+            var Arcade = ((ArcadeGameRule)room.GameRuleManager.GameRule);
+            Arcade.Stage = message.Unk1;
+            Arcade.SubStage = message.Unk2;
+
+            room.Broadcast(new SArcadeStageSelectAckMessage { Unk1 = message.Unk1, Unk2 = message.Unk2 });
         }
 
         [MessageHandler(typeof(CArcadeLoadingSucceesReqMessage))]

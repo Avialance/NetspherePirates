@@ -289,7 +289,7 @@ namespace Netsphere.Network
                 .Member(dest => dest.PlayerCount, src => src.Players.Count);
 
             Mapper.Register<PlayerItem, ItemDto>()
-                .Member(dest => dest.Refund, src => src.CalculateRefund())
+                .Member(dest => dest.Refund, src => src.CalculateRefund() / 216)
                 .Member(dest => dest.PurchaseTime, src => src.PurchaseDate.ToUnixTimeSeconds())
                 .Member(dest => dest.ExpireTime, src => src.ExpireDate)
                 .Member(dest => dest.Quantity, src => src.Count)
@@ -411,7 +411,6 @@ namespace Netsphere.Network
             Mapper.Register<PlayerItem, ItemDurabilityInfoDto>()
                 .Member(dest => dest.ItemId, src => src.Id);
 
-
             Mapper.Register<Player, UserDataDto>()
                 .Member(dest => dest.AccountId, src => src.Account.Id)
                 .Member(dest => dest.ServerId, src => Config.Instance.Id)
@@ -419,13 +418,11 @@ namespace Netsphere.Network
                 .Function(dest => dest.RoomId, src => src.Room?.Id ?? 0xFFFFFFFF) // ToDo: Tutorial, License
                 .Function(dest => dest.Team, src => src.RoomInfo?.Team?.Team ?? Team.Neutral)
                 .Function(dest => dest.TotalExp, src => src.TotalExperience)
-                .Function(dest => dest.DMStats, src => src.DeathMatch.GetStatsDto())
-                .Function(dest => dest.TDStats, src => src.TouchDown.GetStatsDto())
-                .Function(dest => dest.ChaserStats, src => src.Chasser.GetStatsDto())
-                .Function(dest => dest.BattleRoyalStats, src => src.BattleRoyal.GetStatsDto())
-                .Function(dest => dest.CaptainStats, src => src.CaptainMode.GetStatsDto());
-
-
+                .Function(dest => dest.DMStats, src => src.DeathMatch.GetUserDataDto())
+                .Function(dest => dest.TDStats, src => src.TouchDown.GetUserDataDto())
+                .Function(dest => dest.ChaserStats, src => src.Chasser.GetUserDataDto())
+                .Function(dest => dest.BattleRoyalStats, src => src.BattleRoyal.GetUserDataDto())
+                .Function(dest => dest.CaptainStats, src => src.CaptainMode.GetUserDataDto());
 
             Mapper.Register<Player, UserDataWithNickDto>()
                 .Member(dest => dest.AccountId, src => src.Account.Id)

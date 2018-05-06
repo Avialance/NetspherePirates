@@ -26,6 +26,7 @@ namespace Netsphere.Database.Game
         public int Id { get; set; }
         public int ClubId { get; set; }
         public byte Authority { get; set; }
+        public byte State { get; set; }
     }
 
     [Table("license_rewards")]
@@ -100,7 +101,7 @@ namespace Netsphere.Database.Game
         public ulong DefenseAssist { get; set; }
         public ulong Kill { get; set; }
         public ulong KillAssist { get; set; }
-        public ulong TDHeal { get; set; }
+        public ulong OffenseRebound { get; set; }
         public ulong Heal { get; set; }
     }
 
@@ -128,6 +129,8 @@ namespace Netsphere.Database.Game
 
         public ulong Won { get; set; }
         public ulong Loss { get; set; }
+        public ulong Kills { get; set; }
+        public ulong KillAssists { get; set; }
         public ulong FirstKilled { get; set; }
         public ulong FirstPlace { get; set; }
     }

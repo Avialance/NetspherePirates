@@ -87,8 +87,12 @@ namespace Netsphere
                     Skills.Equip(item, (SkillSlot)slot);
                     break;
 
+                case ItemCategory.Boost:
+                    CharacterManager.Boosts.Equip(item, slot);
+                    break;
+
                 default:
-                    throw new CharacterException("Invalid category" + item.ItemNumber.Category);
+                    throw new CharacterException("Invalid category " + item.ItemNumber.Category);
             }
         }
 
@@ -106,6 +110,10 @@ namespace Netsphere
 
                 case ItemCategory.Skill:
                     Skills.UnEquip((SkillSlot)slot);
+                    break;
+
+                case ItemCategory.Boost:
+                    CharacterManager.Boosts.UnEquip(slot);
                     break;
 
                 default:

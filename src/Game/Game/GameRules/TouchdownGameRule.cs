@@ -368,57 +368,23 @@ namespace Netsphere.Game.GameRules
 
         private uint GetTotalScore()
         {
-            return TDScore * 10 + TDAssistScore * 5
-                + Kills * 2 + KillAssists
-                + OffenseScore * 4 + OffenseAssistScore * 2
-                + DefenseScore * 4 + DefenseAssistScore * 2
-                + HealScore * 2
-                + OffenseReboundScore * 2;
+            return 5 * (TDScore * 2 + TDAssistScore) + 2 * (2 * (OffenseScore + DefenseScore) + OffenseAssistScore + DefenseAssistScore + HealScore + OffenseReboundScore + Kills) + KillAssists;
+            //return TDScore * 10 + TDAssistScore * 5
+            //    + Kills * 2 + KillAssists
+            //    + OffenseScore * 4 + OffenseAssistScore * 2
+            //    + DefenseScore * 4 + DefenseAssistScore * 2
+            //    + HealScore * 2
+            //    + OffenseReboundScore * 2;
         }
 
         public override uint GetExpGain(out uint bonusExp)
         {
             return GetExpGain(Config.Instance.Game.TouchdownExpRates, out bonusExp);
-            /*base.GetExpGain(out bonusExp);
+        }
 
-            var config = Config.Instance.Game.TouchdownExpRates;
-            var place = 1;
-
-            var plrs = Player.Room.TeamManager.Players
-                .Where(plr => plr.RoomInfo.State == PlayerState.Waiting &&
-                    plr.RoomInfo.Mode == PlayerGameMode.Normal)
-                .ToArray();
-
-            foreach (var plr in plrs.OrderByDescending(plr => plr.RoomInfo.Stats.TotalScore))
-            {
-                if (plr == Player)
-                    break;
-
-                place++;
-                if (place > 3)
-                    break;
-            }
-
-            var rankingBonus = 0f;
-            switch (place)
-            {
-                case 1:
-                    rankingBonus = config.FirstPlaceBonus;
-                    break;
-
-                case 2:
-                    rankingBonus = config.SecondPlaceBonus;
-                    break;
-
-                case 3:
-                    rankingBonus = config.ThirdPlaceBonus;
-                    break;
-            }
-
-            return (uint)(TotalScore * config.ScoreFactor +
-                rankingBonus +
-                plrs.Length * config.PlayerCountFactor +
-                Player.RoomInfo.PlayTime.TotalMinutes * config.ExpPerMin);*/
+        public override uint GetPenGain(out uint bonusPen)
+        {
+            return GetPenGain(Config.Instance.Game.TouchdownExpRates, out bonusPen);
         }
     }
 

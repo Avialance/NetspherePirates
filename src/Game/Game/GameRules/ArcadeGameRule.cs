@@ -11,6 +11,10 @@ namespace Netsphere.Game.GameRules
     {
         private Dictionary<ulong, Player> _loadingOk = new Dictionary<ulong, Player>();
 
+        public byte Stage { get; set; }
+
+        public byte SubStage { get; set; }
+
         public override Briefing Briefing { get; }
 
         public override GameRule GameRule => GameRule.Arcade;
@@ -77,6 +81,17 @@ namespace Netsphere.Game.GameRules
         public override PlayerRecord GetPlayerRecord(Player plr)
         {
             return new ArcadePlayerRecord(plr);
+        }
+
+        public override void PlayerJoined(object room, RoomPlayerEventArgs e)
+        {
+            base.PlayerJoined(room, e);
+            e.Player.Session.SendAsync(new SArcadeStageBriefingAckMessage
+            {
+                Unk1 = Stage,
+                Unk2 = SubStage,
+                Data = new byte[] { 0, 0, 0 }
+            });
         }
 
         public void OnLoadingOk(Player plr)

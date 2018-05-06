@@ -362,7 +362,7 @@ namespace Netsphere.Network.Message.GameRule
     public class CUseCoinReqMessage : IGameRuleMessage
     {
         [BlubMember(0)]
-        public int Unk { get; set; }
+        public int Type { get; set; }
     }
 
     [BlubContract]

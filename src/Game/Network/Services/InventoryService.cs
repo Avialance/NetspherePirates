@@ -210,6 +210,7 @@ namespace Netsphere.Network.Services
                               Period = reward.Period,
                               PEN = reward.PEN,
                               Effect = reward.Effect,
+                              Unk = (byte)reward.Color
                           }).ToArray();
 
             foreach (var it in Rewards)
@@ -220,11 +221,7 @@ namespace Netsphere.Network.Services
                 }
                 else
                 {
-                    if (it.PeriodType == ItemPeriodType.None)
-                    {
-                        plr.Inventory.Create(it.ItemNumber, it.PriceType, it.PeriodType, (ushort)it.Period, 0, it.Effect, 1);
-                    }
-                    else
+                    if (it.PeriodType == ItemPeriodType.Units)
                     {
                         var prev = plr.Inventory
                             .FirstOrDefault(p => p.ItemNumber == it.ItemNumber
@@ -234,17 +231,17 @@ namespace Netsphere.Network.Services
 
                         if (prev == null || prev.ItemNumber == 0)
                         {
-                            plr.Inventory.Create(it.ItemNumber, it.PriceType, it.PeriodType, (ushort)it.Period, 0, it.Effect, 1);
+                            plr.Inventory.Create(it.ItemNumber, it.PriceType, it.PeriodType, (ushort)it.Period, it.Unk, it.Effect, 1);
                         }
                         else
                         {
-                            if (it.PeriodType == ItemPeriodType.Units)
-                                prev.Count += it.Period;
-                            else
-                                prev.Period += (ushort)it.Period;
-
+                            prev.Count++;
                             session.SendAsync(new SInventoryActionAckMessage(InventoryAction.Update, prev.Map<PlayerItem, ItemDto>()));
                         }
+                    }
+                    else
+                    {
+                        plr.Inventory.Create(it.ItemNumber, it.PriceType, it.PeriodType, (ushort)it.Period, it.Unk, it.Effect, 1);
                     }
                 }
             }
@@ -268,7 +265,7 @@ namespace Netsphere.Network.Services
             switch (item.ItemNumber)
             {
                 case 4000001: // Permanent NickName Change
-                    nickname.ExpireDate = null;
+                    nickname.ExpireDate = (long)(-1);
                     break;
                 case 4000002: // Remove NickName Change
                     session.SendAsync(new SServerResultInfoAckMessage(ServerResult.FailedToRequestTask));
@@ -288,9 +285,7 @@ namespace Netsphere.Network.Services
             }
 
             using (var auth = AuthDatabase.Open())
-            {
                 auth.Insert(nickname);
-            }
 
             plr.Inventory.Remove(item);
 
@@ -332,7 +327,23 @@ namespace Netsphere.Network.Services
                 Result = 0
             });
 
-            plr.Inventory.Remove(item);
+            if (item.Count > 1)
+            {
+                item.Count--;
+                session.SendAsync(new SInventoryActionAckMessage(InventoryAction.Update, item.Map<PlayerItem, ItemDto>()));
+            }
+            else if (item.Count == 1)
+            {
+                plr.Inventory.Remove(item);
+            }
+            else
+            {
+                return;
+            }
+
+            plr.Coins2 += 10;
+
+            session.SendAsync(new SSetCoinAckMessage { ArcadeCoins = plr.Coins1, BuffCoins = plr.Coins2 });
         }
     }
 }

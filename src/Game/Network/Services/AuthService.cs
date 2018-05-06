@@ -59,6 +59,7 @@ namespace Netsphere.Network.Services
             {
                 accountDto = (await db.FindAsync<AccountDto>(statement => statement
                             .Include<BanDto>(join => join.LeftOuterJoin())
+                            .Include<NicknameHistoryDto>(join => join.LeftOuterJoin())
                             .Where($"{nameof(AccountDto.Id):C} = @Id")
                             .WithParameters(new { Id = message.AccountId })))
                     .FirstOrDefault();
@@ -72,6 +73,14 @@ namespace Netsphere.Network.Services
                 session.SendAsync(new SLoginAckMessage(GameLoginResult.SessionTimeout));
                 return;
             }
+
+            var hasNicknameChanger = from nick in accountDto.NicknameHistory
+                                      where nick.ExpireDate == -1 || nick.ExpireDate > DateTimeOffset.Now.ToUnixTimeSeconds()
+                                      orderby nick.Id descending
+                                      select nick.Nickname;
+
+            if (hasNicknameChanger.Any())
+                accountDto.Nickname = hasNicknameChanger.First();
 
             uint inputSessionId;
             if (!uint.TryParse(message.SessionId, out inputSessionId))
@@ -380,7 +389,7 @@ namespace Netsphere.Network.Services
             await session.SendAsync(new STaskInfoAckMessage { Tasks = plr.Mission.GetTasks() });
             await session.SendAsync(new SServerResultInfoAckMessage(ServerResult.WelcomeToS4World2));
 
-            var club = Club.Instance.ClubInfo(plr);
+            var club = Club.Instance.LoadClubInfo(plr);
             if (club != null)
                 await session.SendAsync(new SClubInfoAckMessage { ClubInfo = club });
 

@@ -28,7 +28,7 @@ namespace Netsphere.Network.Services
                 .Debug("CClubInfoReq");
             session.SendAsync(new SClubInfoAckMessage
             {
-                ClubInfo = Club.Instance.ClubInfo(session.Player)
+                ClubInfo = Club.Instance.GetClubInfo(session.Player)
             });
         }
 

@@ -900,16 +900,16 @@ namespace Netsphere.Network.Message.GameRule
     public class SUseCoinAckMessage: IGameRuleMessage
     {
         [BlubMember(0)]
-        public int Unk1 { get; set; }
+        public int Result { get; set; }
 
         [BlubMember(1)]
-        public int Unk2 { get; set; }
+        public int Type { get; set; }
 
         [BlubMember(2)]
-        public int Unk3 { get; set; }
+        public int Time { get; set; }
 
         [BlubMember(3)]
-        public int Unk4 { get; set; }
+        public int Value { get; set; }
     }
 
     [BlubContract]

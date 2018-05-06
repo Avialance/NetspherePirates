@@ -29,12 +29,14 @@ namespace Netsphere
 
         private readonly ConcurrentDictionary<ulong, Player> _players = new ConcurrentDictionary<ulong, Player>();
         private readonly ConcurrentDictionary<ulong, object> _kickedPlayers = new ConcurrentDictionary<ulong, object>();
+        private readonly TimeSpan _pingAckTime = TimeSpan.FromMilliseconds(1000);
         private readonly TimeSpan _hostUpdateTime = TimeSpan.FromSeconds(30);
         private readonly TimeSpan _changingRulesTime = TimeSpan.FromSeconds(5);
         private const uint PingDifferenceForChange = 20;
 
         private TimeSpan _hostUpdateTimer;
         private TimeSpan _changingRulesTimer;
+        private TimeSpan _pingAckTimer;
 
         public RoomManager RoomManager { get; }
         public uint Id { get; }
@@ -127,6 +129,15 @@ namespace Netsphere
                 }
             }
 
+            _pingAckTimer += delta;
+            if (_pingAckTimer >= _pingAckTime)
+            {
+                foreach (var plr in Players.Values)
+                    plr.Session.SendAsync(new SGamePingAverageAckMessage { Unk = (uint)plr.Session.UnreliablePing });
+
+                _pingAckTimer = TimeSpan.Zero;
+            }
+
             if (IsChangingRules)
             {
                 _changingRulesTimer += delta;
@@ -180,10 +191,25 @@ namespace Netsphere
                 Creator = plr;
             }
 
+            var clubList = (from p in _players
+                            let clubInfo = Club.Instance.GetClubInfo(p.Value)
+                            where clubInfo != null
+                            select clubInfo).ToArray();
+
             Broadcast(new SEnteredPlayerAckMessage(plr.Map<Player, RoomPlayerDto>()));
+
+            // Club section
+            var plrClub = Club.Instance.GetClubInfo(plr);
+            if (plrClub != null)
+                Broadcast(new SEnteredPlayerClubInfoAckMessage { Player = plrClub });
+
             plr.Session.SendAsync(new SSuccessEnterRoomAckMessage(this.Map<Room, EnterRoomInfoDto>()));
             plr.Session.SendAsync(new SIdsInfoAckMessage(1, plr.RoomInfo.Slot));
             plr.Session.SendAsync(new SEnteredPlayerListAckMessage(_players.Values.Select(p => p.Map<Player, RoomPlayerDto>()).ToArray()));
+
+            if (clubList.Length > 0)
+                plr.Session.SendAsync(new SEnteredPlayerClubInfoListAckMessage { Players = clubList });
+
             OnPlayerJoining(new RoomPlayerEventArgs(plr));
         }
 

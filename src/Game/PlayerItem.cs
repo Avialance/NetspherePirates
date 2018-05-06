@@ -33,12 +33,12 @@ namespace Netsphere
         public DateTimeOffset PurchaseDate { get; }
         public TimeSpan PlayTime
         {
-            get => new TimeSpan(_playTime);
+            get => TimeSpan.FromSeconds(_playTime);
             set
             {
-                if (_playTime == value.Seconds)
+                if (_playTime == (long)value.TotalSeconds)
                     return;
-                _playTime = value.Seconds;
+                _playTime = (long)value.TotalSeconds;
                 NeedsToSave = true;
             }
         }
@@ -87,7 +87,7 @@ namespace Netsphere
                     return 0;
                 case ItemPeriodType.Hours:
                     {
-                        var left = (PurchaseDate.AddHours(Period) - PurchaseDate.Add(PlayTime)).TotalSeconds;
+                        var left = (TimeSpan.FromHours(Period) - PlayTime).TotalSeconds;
                         if (left > int.MaxValue)
                             return int.MaxValue;
 
@@ -122,6 +122,7 @@ namespace Netsphere
             PurchaseDate = DateTimeOffset.FromUnixTimeSeconds(dto.PurchaseDate);
             _durability = dto.Durability;
             _count = (uint)dto.Count;
+            _playTime = dto.PlayTime;
         }
 
         internal PlayerItem(Inventory inventory, ShopItemInfo itemInfo, ShopPrice price, byte color, uint effect, DateTimeOffset purchaseDate, uint count)
@@ -170,8 +171,8 @@ namespace Netsphere
             if (loss < 0)
                 throw new ArgumentOutOfRangeException(nameof(loss));
 
-            if (Inventory.Player.Room == null)
-                throw new InvalidOperationException("Player is not inside a room");
+            //if (Inventory.Player.Room == null)
+            //    throw new InvalidOperationException("Player is not inside a room");
 
             if (Durability == -1)
                 return Task.CompletedTask;
@@ -185,12 +186,35 @@ namespace Netsphere
 
         public uint CalculateRefund()
         {
-            return 0; // ToDo
+            var price = GetShopPrice();
+            var life = 0.0;
+
+            switch (PeriodType)
+            {
+                case ItemPeriodType.Days:
+                    life = (PurchaseDate.AddDays(Period) - DateTime.Now).TotalSeconds / TimeSpan.FromDays(Period).TotalSeconds;
+                    break;
+                case ItemPeriodType.Hours:
+                    life = (TimeSpan.FromHours(Period) - PlayTime).TotalSeconds / TimeSpan.FromHours(Period).TotalSeconds;
+                    break;
+                case ItemPeriodType.None:
+                    life = Durability / price.Durability;
+                    break;
+            }
+
+            var refund = price.Price * 0.7 * life;
+            return (uint)refund; // ToDo
         }
 
         public uint CalculateRepair()
         {
-            return 0; // Todo
+            if (PeriodType != ItemPeriodType.None)
+                return 0; // Todo
+
+            var price = GetShopPrice();
+            var life = 1.0 - (Durability / price.Durability);
+            var repair = price.Price * 0.3 * life;
+            return (uint)repair;
         }
     }
 }

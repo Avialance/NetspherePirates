@@ -343,7 +343,8 @@ namespace Netsphere.Resource
                             Period = Period,
                             PEN = PEN,
                             Effect = rw.Effect,
-                            Rate = rw.Rate
+                            Rate = rw.Rate,
+                            Color = rw.Color
                         });
                     }
 

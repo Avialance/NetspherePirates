@@ -42,6 +42,8 @@ namespace Netsphere.Resource
 
         public ItemPeriodType PeriodType { get; set; }
 
+        public byte Color { get; set; }
+
         public uint PEN { get; set; }
 
         public uint Period { get; set; }

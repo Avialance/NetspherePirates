@@ -2,6 +2,8 @@
 using System.Linq;
 using Netsphere.Network.Data.GameRule;
 using Netsphere.Network.Message.GameRule;
+using Serilog;
+using Serilog.Core;
 using Stateless;
 
 // ReSharper disable once CheckNamespace
@@ -10,10 +12,12 @@ namespace Netsphere.Game.GameRules
 {
     internal abstract class GameRuleBase
     {
+        protected static readonly ILogger Logger = Log.ForContext(Constants.SourceContextPropertyName, nameof(ChaserGameRule));
         private static readonly TimeSpan PreHalfTimeWaitTime = TimeSpan.FromSeconds(9);
         private static readonly TimeSpan PreResultWaitTime = TimeSpan.FromSeconds(9);
         private static readonly TimeSpan HalfTimeWaitTime = TimeSpan.FromSeconds(24);
         private static readonly TimeSpan ResultWaitTime = TimeSpan.FromSeconds(14);
+        private readonly Random _seed = new Random();
 
         public abstract GameRule GameRule { get; }
         public Room Room { get; }
@@ -50,7 +54,71 @@ namespace Netsphere.Game.GameRules
 
         public virtual void PlayerLeft(object room, RoomPlayerEventArgs e)
         {
-            e.Player.Mission.OnGoinClear();
+            var plr = e.Player;
+            plr.Mission.OnGoinClear();
+
+            var b = plr.CharacterManager.Boosts.GetItems().First();
+
+            if (b != null)
+                b.PlayTime += plr.RoomInfo.PlayTime;
+
+            // Change item status
+            foreach (var @char in plr.CharacterManager)
+            {
+                var sec = plr.RoomInfo.CharacterPlayTime[@char.Slot];
+                var loss = (int)plr.RoomInfo.CharacterPlayTime[@char.Slot].TotalMinutes *
+                           Config.Instance.Game.DurabilityLossPerMinute;
+                loss += plr.RoomInfo.CharacterDeaths[@char.Slot] * Config.Instance.Game.DurabilityLossPerDeath;
+
+                foreach (var item in @char.Weapons.GetItems().Where(item => item != null && item.Durability != -1))
+                {
+                    if (item.PeriodType == ItemPeriodType.Hours)
+                    {
+                        item.PlayTime += sec;
+                        if (item.PlayTime >= TimeSpan.FromHours(item.Period))
+                            plr.Inventory.Remove(item);
+                        else
+                            plr.Inventory.Update(item);
+                    }
+                    else if (item.PeriodType == ItemPeriodType.None)
+                    {
+                        item.LoseDurabilityAsync(loss).Wait();
+                    }
+                }
+
+                foreach (var item in @char.Costumes.GetItems().Where(item => item != null && item.Durability != -1))
+                {
+                    if (item.PeriodType == ItemPeriodType.Hours)
+                    {
+                        item.PlayTime += sec;
+                        if (item.PlayTime >= TimeSpan.FromHours(item.Period))
+                            plr.Inventory.Remove(item);
+                        else
+                            plr.Inventory.Update(item);
+                    }
+                    else if (item.PeriodType == ItemPeriodType.None)
+                    {
+                        item.LoseDurabilityAsync(loss).Wait();
+                    }
+                }
+
+                foreach (var item in @char.Skills.GetItems().Where(item => item != null && item.Durability != -1))
+                {
+                    item.LoseDurabilityAsync(loss).Wait();
+                    if (item.PeriodType == ItemPeriodType.Hours)
+                    {
+                        item.PlayTime += sec;
+                        if (item.PlayTime >= TimeSpan.FromHours(item.Period))
+                            plr.Inventory.Remove(item);
+                        else
+                            plr.Inventory.Update(item);
+                    }
+                    else if (item.PeriodType == ItemPeriodType.None)
+                    {
+                        item.LoseDurabilityAsync(loss).Wait();
+                    }
+                }
+            }
         }
 
         public virtual void Update(TimeSpan delta)
@@ -125,6 +193,32 @@ namespace Netsphere.Game.GameRules
             killer.RoomInfo.Stats.Kills++;
             target.RoomInfo.Stats.Deaths++;
 
+            target.RoomInfo.CharacterDeaths[target.CharacterManager.CurrentSlot]++;
+
+            if (killer.RoomInfo.Stats.PENLC > DateTimeOffset.Now.ToUnixTimeSeconds())
+            {
+                var gain = (uint)_seed.Next(10, 30);
+                killer.PEN += gain;
+                killer.Session.SendAsync(new SLuckyShotAckMessage
+                {
+                    Unk1 = 1,
+                    Unk2 = 30,
+                    Unk3 = 3
+                });
+            }
+
+            if (killer.RoomInfo.Stats.EXPLC > DateTimeOffset.Now.ToUnixTimeSeconds())
+            {
+                var gain = (uint)_seed.Next(10, 30);
+                killer.TotalExperience += gain;
+                killer.Session.SendAsync(new SLuckyShotAckMessage
+                {
+                    Unk1 = 2,
+                    Unk2 = 30,
+                    Unk3 = 3
+                });
+            }
+
             if (assist != null)
             {
                 assist.RoomInfo.Stats.KillAssists++;
@@ -144,6 +238,7 @@ namespace Netsphere.Game.GameRules
         public virtual void OnScoreTeamKill(Player killer, Player target, AttackAttribute attackAttribute)
         {
             target.RoomInfo.Stats.Deaths++;
+            target.RoomInfo.CharacterDeaths[target.CharacterManager.CurrentSlot]++;
 
             Room.Broadcast(
                 new SScoreTeamKillAckMessage(new Score2Dto(killer.RoomInfo.PeerId, target.RoomInfo.PeerId,
@@ -158,6 +253,7 @@ namespace Netsphere.Game.GameRules
         public virtual void OnScoreSuicide(Player plr)
         {
             plr.RoomInfo.Stats.Deaths++;
+            plr.RoomInfo.CharacterDeaths[plr.CharacterManager.CurrentSlot]++;
             Room.Broadcast(new SScoreSuicideAckMessage(plr.RoomInfo.PeerId, AttackAttribute.KillOneSelf));
         }
 
@@ -214,25 +310,37 @@ namespace Netsphere.Game.GameRules
                             var sec = plr.RoomInfo.CharacterPlayTime[@char.Slot];
                             var loss = (int)plr.RoomInfo.CharacterPlayTime[@char.Slot].TotalMinutes *
                                        Config.Instance.Game.DurabilityLossPerMinute;
-                            loss += (int)plr.RoomInfo.Stats.Deaths * Config.Instance.Game.DurabilityLossPerDeath;
+                            loss += plr.RoomInfo.CharacterDeaths[@char.Slot] * Config.Instance.Game.DurabilityLossPerDeath;
 
                             foreach (var item in @char.Weapons.GetItems().Where(item => item != null && item.Durability != -1))
                             {
-                                item.LoseDurabilityAsync(loss).Wait();
                                 if (item.PeriodType == ItemPeriodType.Hours)
                                 {
                                     item.PlayTime += sec;
-                                    plr.Inventory.Update(item);
+                                    if (item.PlayTime >= TimeSpan.FromHours(item.Period))
+                                        plr.Inventory.Remove(item);
+                                    else
+                                        plr.Inventory.Update(item);
+                                }
+                                else if (item.PeriodType == ItemPeriodType.None)
+                                {
+                                    item.LoseDurabilityAsync(loss).Wait();
                                 }
                             }
 
                             foreach (var item in @char.Costumes.GetItems().Where(item => item != null && item.Durability != -1))
                             {
-                                item.LoseDurabilityAsync(loss).Wait();
                                 if (item.PeriodType == ItemPeriodType.Hours)
                                 {
                                     item.PlayTime += sec;
-                                    plr.Inventory.Update(item);
+                                    if (item.PlayTime >= TimeSpan.FromHours(item.Period))
+                                        plr.Inventory.Remove(item);
+                                    else
+                                        plr.Inventory.Update(item);
+                                }
+                                else if (item.PeriodType == ItemPeriodType.None)
+                                {
+                                    item.LoseDurabilityAsync(loss).Wait();
                                 }
                             }
 
@@ -242,7 +350,10 @@ namespace Netsphere.Game.GameRules
                                 if (item.PeriodType == ItemPeriodType.Hours)
                                 {
                                     item.PlayTime += sec;
-                                    plr.Inventory.Update(item);
+                                    if (item.PlayTime >= TimeSpan.FromHours(item.Period))
+                                        plr.Inventory.Remove(item);
+                                    else
+                                        plr.Inventory.Update(item);
                                 }
                             }
                         }

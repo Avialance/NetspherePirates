@@ -1071,10 +1071,10 @@ namespace Netsphere.Network.Message.Game
     public class SSetCoinAckMessage : IGameMessage
     {
         [BlubMember(0)]
-        public uint ArcadeCoins { get; set; }
+        public uint BuffCoins { get; set; }
 
         [BlubMember(1)]
-        public uint BuffCoins { get; set; }
+        public uint ArcadeCoins { get; set; }
     }
 
     [BlubContract]

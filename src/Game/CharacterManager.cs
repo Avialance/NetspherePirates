@@ -24,6 +24,7 @@ namespace Netsphere
         private readonly ConcurrentStack<Character> _charactersToDelete = new ConcurrentStack<Character>();
 
         public Player Player { get; }
+        public BoostManager Boosts { get; }
         public Character CurrentCharacter => GetCharacter(CurrentSlot);
         public byte CurrentSlot { get; private set; }
         public int Count => _characters.Count;
@@ -48,6 +49,8 @@ namespace Netsphere
                         .Warning("Multiple characters on slot {slot}", @char.Slot);
                 }
             }
+
+            Boosts = new BoostManager(plr);
         }
 
         /// <summary>

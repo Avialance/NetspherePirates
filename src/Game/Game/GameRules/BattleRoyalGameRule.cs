@@ -120,12 +120,21 @@ namespace Netsphere.Game.GameRules
                 killer.BattleRoyal.FirstKilled++;
 
                 if (assist != null)
+                {
+                    assist.BattleRoyal.FirstKillAssists++;
                     GetRecord(assist).BonusKillAssists++;
+                }
 
                 // Remove kill scores when this was a bonus kill
                 GetRecord(killer).Kills--;
                 if (assist != null)
                     GetRecord(assist).KillAssists--;
+            }
+            else
+            {
+                killer.BattleRoyal.Kills++;
+                if (assist != null)
+                    assist.BattleRoyal.KillAssists++;
             }
 
             First = GetFirst();
@@ -268,6 +277,11 @@ namespace Netsphere.Game.GameRules
             //    rankingBonus +
             //    plrs.Length * config.PlayerCountFactor +
             //    Player.RoomInfo.PlayTime.TotalMinutes * config.ExpPerMin);
+        }
+
+        public override uint GetPenGain(out uint bonusPen)
+        {
+            return GetPenGain(Config.Instance.Game.BRExpRates, out bonusPen);
         }
     }
 }

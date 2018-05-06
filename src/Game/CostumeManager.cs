@@ -37,7 +37,9 @@ namespace Netsphere
 
             if (!CanEquip(item, slot))
                 throw new CharacterException($"Cannot equip item {item.ItemNumber} on slot {slot}");
-            
+
+            var plr = _character.CharacterManager.Player;
+
             switch (slot)
             {
                 case CostumeSlot.Hair:
@@ -58,7 +60,6 @@ namespace Netsphere
                     throw new CharacterException("Invalid slot: " + ((byte)slot));
             }
 
-            var plr = _character.CharacterManager.Player;
             plr.Session.SendAsync(new SUseItemAckMessage
             {
                 CharacterSlot = _character.Slot,

@@ -52,6 +52,12 @@ namespace Netsphere.Resource.xml
         [XmlAttribute]
         public uint PeriodType { get; set; } = 0;
 
+        /// <summary>
+        /// Gets or Set Color of item
+        /// </summary>
+        [XmlAttribute]
+        public byte Color { get; set; } = 0;
+
         // Period or Pen
         [XmlAttribute]
         public uint Value { get; set; }

@@ -234,6 +234,66 @@ namespace Netsphere.Database.Migration.Game
               KEY `PlayerId` (`PlayerId`),
               CONSTRAINT `player_settings_ibfk_1` FOREIGN KEY (`PlayerId`) REFERENCES `players` (`Id`) ON DELETE CASCADE
             );");
+
+            Execute(@"CREATE TABLE `player_chsinfos` (
+  `PlayerId` int(11) NOT NULL,
+  `ChasedWon` int(11) NOT NULL DEFAULT '0',
+  `ChasedRounds` int(11) NOT NULL DEFAULT '0',
+  `ChaserWon` int(11) NOT NULL DEFAULT '0',
+  `ChaserRounds` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`PlayerId`),
+  UNIQUE KEY `PlayerId` (`PlayerId`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+
+            Execute(@"CREATE TABLE `player_cptinfos` (
+  `PlayerId` int(11) NOT NULL,
+  `Won` int(11) NOT NULL DEFAULT '0',
+  `Loss` int(11) NOT NULL DEFAULT '0',
+  `CPTKilled` int(11) NOT NULL DEFAULT '0',
+  `CPTCount` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`PlayerId`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+
+            Execute(@"CREATE TABLE `player_dminfos` (
+  `PlayerId` int(11) NOT NULL,
+  `Won` int(11) NOT NULL DEFAULT '0',
+  `Loss` int(11) NOT NULL DEFAULT '0',
+  `Kills` int(11) NOT NULL DEFAULT '0',
+  `KillAssists` int(11) NOT NULL DEFAULT '0',
+  `Deaths` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`PlayerId`),
+  KEY `PlayerId` (`PlayerId`),
+  KEY `PlayerId_2` (`PlayerId`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+
+            Execute(@"CREATE TABLE `player_tdinfos` (
+  `PlayerId` int(11) NOT NULL,
+  `Won` int(11) NOT NULL DEFAULT '0',
+  `Loss` int(11) NOT NULL DEFAULT '0',
+  `TD` int(11) NOT NULL DEFAULT '0',
+  `TDAssist` int(11) NOT NULL DEFAULT '0',
+  `Offense` int(11) NOT NULL DEFAULT '0',
+  `OffenseAssist` int(11) NOT NULL DEFAULT '0',
+  `Defense` int(11) NOT NULL DEFAULT '0',
+  `DefenseAssist` int(11) NOT NULL DEFAULT '0',
+  `Kill` int(11) NOT NULL DEFAULT '0',
+  `KillAssist` int(11) NOT NULL DEFAULT '0',
+  `TDHeal` int(11) NOT NULL DEFAULT '0',
+  `Heal` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`PlayerId`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+
+            Execute(@"CREATE TABLE `player_missions` (
+  `Id` int(11) NOT NULL AUTO_INCREMENT,
+  `PlayerId` int(11) NOT NULL,
+  `TaskId` int(11) NOT NULL,
+  `Progress` int(11) NOT NULL,
+  `Date` bigint(20) NOT NULL,
+  `RewardType` smallint(6) NOT NULL,
+  `Reward` mediumint(9) NOT NULL,
+  `Slot` smallint(6) NOT NULL,
+  PRIMARY KEY (`Id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;");
         }
 
         protected override void Down()

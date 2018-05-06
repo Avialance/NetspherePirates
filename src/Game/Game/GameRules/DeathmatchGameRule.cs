@@ -218,46 +218,11 @@ namespace Netsphere.Game.GameRules
         public override uint GetExpGain(out uint bonusExp)
         {
             return GetExpGain(Config.Instance.Game.DeathmatchExpRates, out bonusExp);
-            //base.GetExpGain(out bonusExp);
+        }
 
-            //var config = Config.Instance.Game.DeathmatchExpRates;
-            //var place = 1;
-
-            //var plrs = Player.Room.TeamManager.Players
-            //    .Where(plr => plr.RoomInfo.State == PlayerState.Waiting &&
-            //        plr.RoomInfo.Mode == PlayerGameMode.Normal)
-            //    .ToArray();
-
-            //foreach (var plr in plrs.OrderByDescending(plr => plr.RoomInfo.Stats.TotalScore))
-            //{
-            //    if (plr == Player)
-            //        break;
-
-            //    place++;
-            //    if (place > 3)
-            //        break;
-            //}
-
-            //var rankingBonus = 0f;
-            //switch (place)
-            //{
-            //    case 1:
-            //        rankingBonus = config.FirstPlaceBonus;
-            //        break;
-
-            //    case 2:
-            //        rankingBonus = config.SecondPlaceBonus;
-            //        break;
-
-            //    case 3:
-            //        rankingBonus = config.ThirdPlaceBonus;
-            //        break;
-            //}
-
-            //return (uint)(TotalScore * config.ScoreFactor +
-            //    rankingBonus +
-            //    plrs.Length * config.PlayerCountFactor +
-            //    Player.RoomInfo.PlayTime.TotalMinutes * config.ExpPerMin);
+        public override uint GetPenGain(out uint bonusPen)
+        {
+            return GetPenGain(Config.Instance.Game.DeathmatchExpRates, out bonusPen);
         }
     }
 }

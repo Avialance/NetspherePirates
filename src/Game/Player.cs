@@ -115,6 +115,10 @@ namespace Netsphere
                 NeedsToSave = true;
             }
         }
+
+        /// <summary>
+        /// Coins of Arcade System
+        /// </summary>
         public uint Coins1
         {
             get { return _coins1; }
@@ -126,6 +130,10 @@ namespace Netsphere
                 NeedsToSave = true;
             }
         }
+
+        /// <summary>
+        /// Coins of Buff system
+        /// </summary>
         public uint Coins2
         {
             get { return _coins2; }
@@ -412,12 +420,76 @@ namespace Netsphere
 
     internal class DMStats
     {
+        private ulong _won;
+        private ulong _loss;
+        private ulong _kills;
+        private ulong _killAssists;
+        private ulong _deaths;
+        private bool _needsSave;
+
         public Player Player { get; set; }
-        public ulong Won { get; set; }
-        public ulong Loss { get; set; }
-        public ulong Kills { get; set; }
-        public ulong KillAssists { get; set; }
-        public ulong Deaths { get; set; }
+        public ulong Won
+        {
+            get => _won;
+
+            set
+            {
+                if (_won == value)
+                    return;
+
+                _won = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong Loss {
+            get => _loss;
+            set
+            {
+                if (_loss == value)
+                    return;
+
+                _loss = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong Kills {
+            get => _kills;
+            set
+            {
+                if (_kills == value)
+                    return;
+
+                _needsSave = true;
+                _kills = value;
+            }
+        }
+
+        public ulong KillAssists {
+            get => _killAssists;
+            set
+            {
+                if (_killAssists == value)
+                    return;
+
+                _needsSave = true;
+                _killAssists = value;
+            }
+        }
+
+        public ulong Deaths {
+            get => _deaths;
+            set
+            {
+                if (_deaths == value)
+                    return;
+
+                _needsSave = true;
+                _deaths = value;
+            }
+        }
+
         public float KDRate => Deaths > 0 ? ((Kills * 2) + KillAssists) / (Deaths * 2) : 1.0f;
         private bool _existsInDatabase;
 
@@ -439,6 +511,9 @@ namespace Netsphere
 
         public void Save(IDbConnection db)
         {
+            if (!_needsSave)
+                return;
+
             var update = new PlayerDeathMatchDto
             {
                 PlayerId = (int)Player.Account.Id,
@@ -471,26 +546,202 @@ namespace Netsphere
                 Deaths = (uint)Deaths
             };
         }
+
+        public DMUserDataDto GetUserDataDto()
+        {
+            var kdr = Deaths > 0 ? ((Kills * 2.0f) + KillAssists) / (Deaths * 2.0f) : Kills > 0 ? 1.0f : 0.0f;
+            var total = (float)(Won + Loss);
+            var winrate = total > 0 ? Won / total : 0.5f;
+
+            return new DMUserDataDto
+            {
+                KillDeath = kdr,
+                WinRate = winrate
+            };
+        }
     }
 
     internal class TDStats
     {
+        private bool _needsSave;
+        private ulong _won;
+        private ulong _loss;
+        private ulong _td;
+        private ulong _tdassist;
+        private ulong _offense;
+        private ulong _offenseAssist;
+        private ulong _offenseRebound;
+        private ulong _defense;
+        private ulong _defenseAssist;
+        private ulong _kill;
+        private ulong _killAssist;
+        private ulong _heal;
         private bool _existsInDatabase;
 
         public Player Player { get; set; }
-        public ulong Won { get; set; }
-        public ulong Loss { get; set; }
-        public ulong TD { get; set; }
-        public ulong TDAssist { get; set; }
-        public ulong Offense { get; set; }
-        public ulong OffenseAssist { get; set; }
-        public ulong OffenseRebound { get; set; }
-        public ulong Defense { get; set; }
-        public ulong DefenseAssist { get; set; }
-        public ulong Kill { get; set; }
-        public ulong KillAssists { get; set; }
+
+        public ulong Won
+        {
+            get => _won;
+
+            set
+            {
+                if (_won == value)
+                    return;
+
+                _won = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong Loss
+        {
+            get => _loss;
+            set
+            {
+                if (_loss == value)
+                    return;
+
+                _loss = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong Kill
+        {
+            get => _kill;
+            set
+            {
+                if (_kill == value)
+                    return;
+
+                _needsSave = true;
+                _kill = value;
+            }
+        }
+
+        public ulong KillAssists
+        {
+            get => _killAssist;
+            set
+            {
+                if (_killAssist == value)
+                    return;
+
+                _needsSave = true;
+                _killAssist = value;
+            }
+        }
+
+        public ulong TD {
+            get => _td;
+
+            set
+            {
+                if (_td == value)
+                    return;
+
+                _td = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong TDAssist {
+            get => _tdassist;
+
+            set
+            {
+                if (_tdassist == value)
+                    return;
+
+                _tdassist = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong Offense {
+            get => _offense;
+
+            set
+            {
+                if (_offense == value)
+                    return;
+
+                _offense = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong OffenseAssist {
+            get => _offenseAssist;
+
+            set
+            {
+                if (_offenseAssist == value)
+                    return;
+
+                _offenseAssist = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong OffenseRebound {
+            get => _offenseRebound;
+
+            set
+            {
+                if (_offenseRebound == value)
+                    return;
+
+                _offenseRebound = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong Defense {
+            get => _defense;
+
+            set
+            {
+                if (_defense == value)
+                    return;
+
+                _defense = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong DefenseAssist {
+            get => _defenseAssist;
+
+            set
+            {
+                if (_defenseAssist == value)
+                    return;
+
+                _defenseAssist = value;
+                _needsSave = true;
+            }
+        }
+
         public ulong TDHeal { get; set; }
-        public ulong Heal { get; set; }
+
+        public ulong Heal
+        {
+            get => _heal;
+
+            set
+            {
+                if (_heal == value)
+                    return;
+
+                _heal = value;
+                _needsSave = true;
+            }
+        }
+
+        public float WinRate => Won + Loss > 0 ? (float)Won / (float)(Won + Loss) : 0.5f;
+        public ulong TotalScore => 5 * (TD * 2 + TDAssist) + 2 * (Kill + OffenseAssist + DefenseAssist + TDHeal + 2 * (Offense + Defense)) + KillAssists;
 
         public TDStats(Player player, PlayerDto playerDto)
         {
@@ -507,17 +758,20 @@ namespace Netsphere
                 TDAssist = td.TDAssist;
                 Offense = td.Offense;
                 OffenseAssist = td.OffenseAssist;
+                OffenseRebound = td.OffenseRebound;
                 Defense = td.Defense;
                 DefenseAssist = td.DefenseAssist;
                 Kill = td.Kill;
                 KillAssists = td.KillAssist;
-                TDHeal = td.TDHeal;
                 Heal = td.Heal;
             }
         }
 
         public void Save(IDbConnection db)
         {
+            if (!_needsSave)
+                return;
+
             var update = new PlayerTouchDownDto
             {
                 PlayerId = (int)Player.Account.Id,
@@ -531,7 +785,7 @@ namespace Netsphere
                 DefenseAssist = DefenseAssist,
                 Kill = Kill,
                 KillAssist = KillAssists,
-                TDHeal = TDHeal,
+                OffenseRebound = OffenseRebound,
                 Heal = Heal
             };
             if (_existsInDatabase)
@@ -569,17 +823,84 @@ namespace Netsphere
                 Unk18 = 0
             };
         }
+
+        public TDUserDataDto GetUserDataDto()
+        {
+            return new TDUserDataDto
+            {
+                TotalScore = TotalScore,
+                DefenseScore = 2*(Defense * 2 + DefenseAssist),
+                OffenseScore = 2*(Offense * 2 + OffenseAssist + OffenseRebound),
+                KillScore = Kill * 2 + KillAssists,
+                RecoveryScore = Heal,
+                TDScore = 10 * TD + 5 * TDAssist,
+                WinRate = WinRate
+            };
+        }
     }
 
     internal class ChaserStats
     {
         private bool _existsInDatabase;
+        private bool _needsSave;
+        private ulong _chasedWon;
+        private ulong _chasedRound;
+        private ulong _chaserWon;
+        private ulong _chaserRounds;
 
         public Player Player { get; set; }
-        public ulong ChasedWon { get; set; }
-        public ulong ChasedRounds { get; set; }
-        public ulong ChaserWon { get; set; }
-        public ulong ChaserRounds { get; set; }
+
+        public ulong ChasedWon
+        {
+            get => _chasedWon;
+            set
+            {
+                if (_chasedWon == value)
+                    return;
+
+                _chasedWon = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong ChasedRounds
+        {
+            get => _chasedRound;
+            set
+            {
+                if (_chasedRound == value)
+                    return;
+
+                _chasedRound = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong ChaserWon
+        {
+            get => _chaserWon;
+            set
+            {
+                if (_chaserWon == value)
+                    return;
+
+                _chaserWon = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong ChaserRounds
+        {
+            get => _chaserRounds;
+            set
+            {
+                if (_chaserRounds == value)
+                    return;
+
+                _chaserRounds = value;
+                _needsSave = true;
+            }
+        }
 
         public ChaserStats(Player player, PlayerDto playerDto)
         {
@@ -599,6 +920,9 @@ namespace Netsphere
 
         public void Save(IDbConnection db)
         {
+            if (!_needsSave)
+                return;
+
             var update = new PlayerChaserDto
             {
                 PlayerId = (int)Player.Account.Id,
@@ -628,17 +952,123 @@ namespace Netsphere
                 ChaserWon = (uint)ChaserWon
             };
         }
+
+        public ChaserUserDataDto GetUserDataDto()
+        {
+            return new ChaserUserDataDto
+            {
+                AllKillProbability = (ChasedRounds > 0 ? ChasedWon / ChasedRounds : 1.0f) * 100.0f,
+                SurvivalProbability = (ChaserRounds > 0 ? ChaserWon / ChaserRounds : 1.0f) * 100.0f
+            };
+        }
     }
 
     internal class BRStats
     {
         private bool _existsInDatabase;
+        private bool _needsSave;
+
+        private ulong _won;
+        private ulong _loss;
+        private ulong _kills;
+        private ulong _killAssists;
+        private ulong _firstKillAssists;
+        private ulong _firstKilled;
+        private ulong _firstPlace;
 
         public Player Player { get; set; }
-        public ulong Won { get; set; }
-        public ulong Loss { get; set; }
-        public ulong FirstKilled { get; set; }
-        public ulong FirstPlace { get; set; }
+
+        public ulong Won
+        {
+            get => _won;
+
+            set
+            {
+                if (_won == value)
+                    return;
+
+                _won = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong Loss
+        {
+            get => _loss;
+            set
+            {
+                if (_loss == value)
+                    return;
+
+                _loss = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong Kills
+        {
+            get => _kills;
+            set
+            {
+                if (_kills == value)
+                    return;
+
+                _needsSave = true;
+                _kills = value;
+            }
+        }
+
+        public ulong KillAssists
+        {
+            get => _killAssists;
+            set
+            {
+                if (_killAssists == value)
+                    return;
+
+                _needsSave = true;
+                _killAssists = value;
+            }
+        }
+
+        public ulong FirstKilled
+        {
+            get => _firstKilled;
+            set
+            {
+                if (_firstKilled == value)
+                    return;
+
+                _needsSave = true;
+                _firstKilled = value;
+            }
+        }
+
+        public ulong FirstKillAssists
+        {
+            get => _firstKillAssists;
+            set
+            {
+                if (_firstKillAssists == value)
+                    return;
+
+                _needsSave = true;
+                _firstKillAssists = value;
+            }
+        }
+
+        public ulong FirstPlace
+        {
+            get => _firstPlace;
+            set
+            {
+                if (_firstPlace == value)
+                    return;
+
+                _needsSave = true;
+                _firstPlace = value;
+            }
+        }
 
         public BRStats(Player player, PlayerDto playerDto)
         {
@@ -658,11 +1088,16 @@ namespace Netsphere
 
         public void Save(IDbConnection db)
         {
+            if (!_needsSave)
+                return;
+
             var update = new PlayerBattleRoyalDto
             {
                 PlayerId = (int)Player.Account.Id,
                 Won = Won,
                 Loss = Loss,
+                KillAssists = KillAssists,
+                Kills = Kills,
                 FirstKilled = FirstKilled,
                 FirstPlace = FirstPlace
             };
@@ -684,8 +1119,21 @@ namespace Netsphere
             {
                 Won = (uint)Won,
                 Lost = (uint)Loss,
+                Unk3 = 3,
                 FirstKilled = (uint)FirstKilled,
                 FirstPlace = (uint)FirstPlace
+            };
+        }
+
+        public BRUserDataDto GetUserDataDto()
+        {
+            float rooms = _won + _loss;
+            var score = rooms > 0 ? (_firstKilled /_firstPlace) / rooms : 0.0f;
+            return new BRUserDataDto
+            {
+                CountFirstPlaceKilled = (uint)FirstKilled,
+                CountFirstPlace = (uint)FirstPlace,
+                Score = score
             };
         }
     }
@@ -693,12 +1141,95 @@ namespace Netsphere
     internal class CPTStats
     {
         private bool _existsInDatabase;
+        private bool _needsSave;
+
+        private ulong _won;
+        private ulong _loss;
+        private ulong _kills;
+        private ulong _killAssists;
+        private ulong _cptKills;
+        private ulong _cptCount;
 
         public Player Player { get; set; }
-        public ulong Won { get; set; }
-        public ulong Loss { get; set; }
-        public ulong CPTKilled { get; set; }
-        public ulong CPTCount { get; set; }
+
+        public ulong Won
+        {
+            get => _won;
+
+            set
+            {
+                if (_won == value)
+                    return;
+
+                _won = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong Loss
+        {
+            get => _loss;
+            set
+            {
+                if (_loss == value)
+                    return;
+
+                _loss = value;
+                _needsSave = true;
+            }
+        }
+
+        public ulong Kills
+        {
+            get => _kills;
+            set
+            {
+                if (_kills == value)
+                    return;
+
+                _needsSave = true;
+                _kills = value;
+            }
+        }
+
+        public ulong KillAssists
+        {
+            get => _killAssists;
+            set
+            {
+                if (_killAssists == value)
+                    return;
+
+                _needsSave = true;
+                _killAssists = value;
+            }
+        }
+
+        public ulong CPTKilled
+        {
+            get => _cptKills;
+            set
+            {
+                if (_cptKills == value)
+                    return;
+
+                _needsSave = true;
+                _cptKills = value;
+            }
+        }
+
+        public ulong CPTCount
+        {
+            get => _cptCount;
+            set
+            {
+                if (_cptCount == value)
+                    return;
+
+                _needsSave = true;
+                _cptCount = value;
+            }
+        }
 
         public CPTStats(Player player, PlayerDto playerDto)
         {
@@ -718,6 +1249,9 @@ namespace Netsphere
 
         public void Save(IDbConnection db)
         {
+            if (!_needsSave)
+                return;
+
             var update = new PlayerCaptainDto
             {
                 PlayerId = (int)Player.Account.Id,
@@ -745,7 +1279,19 @@ namespace Netsphere
                 Won = (uint)Won,
                 Lost = (uint)Loss,
                 Captain = (uint)CPTCount,
-                CaptainKilled = (uint)CPTCount
+                CaptainKilled = (uint)CPTKilled
+            };
+        }
+
+        public CPTUserDataDto GetUserDataDto()
+        {
+            float rooms = _won + _loss;
+
+            return new CPTUserDataDto
+            {
+                CaptainKill = (uint)CPTKilled,
+                Domination = (uint)CPTCount,
+                Score = 0
             };
         }
     }
